@@ -86,3 +86,8 @@ void RunningMsgWidget::on_appendText(QString text)
 {
     this->appendText(text);
 }
+
+void RunningMsgWidget::on_clearText(void)
+{
+    this->clearText();
+}

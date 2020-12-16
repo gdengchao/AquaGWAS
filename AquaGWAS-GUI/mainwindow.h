@@ -50,6 +50,7 @@ public:
 
 signals:
     void terminateProcess();
+    void runningMsgWidgetClearText(void);
     void runningMsgWidgetAppendText(QString text);
     void setLineEditTextSig(QLineEdit *, QString);
     void setButtonEnabledSig(QAbstractButton *, bool);

@@ -63,6 +63,8 @@ MainWindow::MainWindow(QWidget *parent)
     // Multi thread to modify ui.
     connect(this, SIGNAL(runningMsgWidgetAppendText(QString)),
             this->runningMsgWidget, SLOT(on_appendText(QString)));
+    connect(this, SIGNAL(runningMsgWidgetClearText()),
+            this->runningMsgWidget, SLOT(on_clearText()));
     connect(this, SIGNAL(setLineEditTextSig(QLineEdit*, QString)),
             this, SLOT(on_setLineEditText(QLineEdit*, QString)));
     connect(this, SIGNAL(setButtonEnabledSig(QAbstractButton *, bool)),
@@ -123,12 +125,12 @@ void MainWindow::cmdGWASButton_clicked()
     }
 
     QString tool = ui->toolComboBox->currentText();
-    QString phenotype = this->fileReader->getPhenotypeFile();
-    QString genotype = this->fileReader->getGenotypeFile();
-    QString map = this->fileReader->getMapFile();
-    QString covar = this->fileReader->getCovariateFile();
-    QString kinship = this->fileReader->getKinshipFile();
-    QString out = this->workDirectory->getOutputDirectory();  // Include project name.
+    QString phenotype = this->fileReader->getPhenotypeFile().replace(' ', "\\ ");
+    QString genotype = this->fileReader->getGenotypeFile().replace(' ', "\\ ");
+    QString map = this->fileReader->getMapFile().replace(' ', "\\ ");
+    QString covar = this->fileReader->getCovariateFile().replace(' ', "\\ ");
+    QString kinship = this->fileReader->getKinshipFile().replace(' ', "\\ ");
+    QString out = this->workDirectory->getOutputDirectory().replace(' ', "\\ ");  // Include project name.
     QString name = this->workDirectory->getProjectName();
 
     if (genotype.isNull())
@@ -255,6 +257,7 @@ void MainWindow::cmdGWASButton_clicked()
 
     }
     cmdlist.append(" --gwBase "+gwBase+" --gwExpo "+gwExpo+" --sgBase "+sgBase+" --sgExpo "+sgExpo);
+    emit runningMsgWidgetClearText();
     emit runningMsgWidgetAppendText(cmdlist);
     // -A -T emmax --name pro2 -M EMMA -p /home/zhi/Desktop/data_renhao/sex.phe -g /home/zhi/Desktop/data_renhao/y2.tped
     // -k /home/zhi/Desktop/data_renhao/y2.hBN.kinf  --kinmatrix_emmax BN -o /home/zhi/Desktop/out
@@ -292,6 +295,7 @@ void MainWindow::pca_ld_cmdButton_clicked()
     PCAcmdlist.append("--pca ");
     PCAcmdlist.append("--name "+name);
     PCAcmdlist.append(" -g "+genotype+" --PCs "+PCs+" --threads "+Threads+" -o "+out);
+    emit runningMsgWidgetClearText();
     emit runningMsgWidgetAppendText("PCA:");
     emit runningMsgWidgetAppendText(PCAcmdlist);
     emit runningMsgWidgetAppendText("");
@@ -406,6 +410,7 @@ void MainWindow::annotationCmdButton_clicked()
      --funcAnnoRef /home/zhi/Desktop/Func_anno_ref/Hdhv3_changeID_annotation.ensem.csv
      --var /home/zhi/Desktop/out/pro2_Hdhv3.variant_function
      --exvar /home/zhi/Desktop/out/pro2_Hdhv3.exonic_variant_function */
+    emit runningMsgWidgetClearText();
     emit runningMsgWidgetAppendText(cmdlist);
     this->runningFlag = false;
 

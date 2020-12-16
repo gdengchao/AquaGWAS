@@ -37,6 +37,7 @@ signals :
 
 protected slots:
     void on_appendText(QString text);
+    void on_clearText(void);
 };
 
 #endif // RUNNINGMSGWIDGET_H
