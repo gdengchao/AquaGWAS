@@ -90,9 +90,9 @@ private slots:
     // Detail params.
     void on_detailPushButton_clicked();   
     // Plot QQ_Manhattan
-    void on_drawManPushButton_clicked();
-    void on_drawQQPushButton_clicked();
-    void on_qqmanGwasReultBrowButton_clicked();
+//    void on_drawManPushButton_clicked();
+//    void on_drawQQPushButton_clicked();
+//    void on_qqmanGwasReultBrowButton_clicked();
     // Linkage disequilibrium
     void on_ldRunPushButton_clicked();
 //    void on_ldPlotPushButton_clicked();
@@ -174,6 +174,7 @@ private:
     QString refreshMessage(QString curMsg, QString newMsg);
     bool drawManhattan(QStringList data, QStringList out);
     bool drawQQplot(QStringList data, QStringList out);
+    bool drawManAndQQ(QString inputFile);
     bool ldPlot(QStringList ldResultFileList);
     QStringList makeQQManInputFile(QString pvalueFile);
     void runPopLDdecaySingle(void);
