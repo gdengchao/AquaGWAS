@@ -26,7 +26,7 @@ void RunningMsgWidget::setText(QString text)
     {
         this->show();
     }
-    ui->textBrowser->setText(text);
+    ui->textBrowser->setText(text.toUtf8());
     ui->textBrowser->moveCursor(QTextCursor::End);  // Move cursor to end.
 }
 
@@ -41,7 +41,7 @@ void RunningMsgWidget::appendText(QString text)
     {
         this->show();
     }
-    ui->textBrowser->append(text);
+    ui->textBrowser->append(text.toUtf8());
     ui->textBrowser->moveCursor(QTextCursor::End);
 }
 
@@ -65,7 +65,7 @@ void RunningMsgWidget::setTitle(QString title)
  */
 QString RunningMsgWidget::getText(void)
 {
-    return ui->textBrowser->toPlainText();
+    return ui->textBrowser->toPlainText().toUtf8();
 }
 
 /**

@@ -290,18 +290,14 @@ void MainWindow::pca_ld_cmdButton_clicked()
     QString name = this->workDirectory->getProjectName();
     QString PCs =QString(ui->nPCsLineEdit->text());
     QString Threads= QString(ui->nThreadsLineEdit->text());
+    QString maf = ui->mafRadioButton->isChecked()? ui->mafDoubleSpinBox->text():nullptr;
+    QString mind = ui->mindRadioButton->isChecked()? ui->mindDoubleSpinBox->text():nullptr;
+    QString geno = ui->genoRadioButton->isChecked()? ui->genoDoubleSpinBox->text():nullptr;
 
     QString PCAcmdlist;
     PCAcmdlist.append("--pca ");
     PCAcmdlist.append("--name "+name);
     PCAcmdlist.append(" -g "+genotype+" --PCs "+PCs+" --threads "+Threads+" -o "+out);
-    emit runningMsgWidgetClearText();
-    emit runningMsgWidgetAppendText("PCA:");
-    emit runningMsgWidgetAppendText(PCAcmdlist);
-    emit runningMsgWidgetAppendText("");
-    emit runningMsgWidgetAppendText("");
-    emit runningMsgWidgetAppendText("");
-    emit runningMsgWidgetAppendText("");
 
     QString LDcmdlist;
     LDcmdlist.append("--LD ");
@@ -314,6 +310,30 @@ void MainWindow::pca_ld_cmdButton_clicked()
     {
         LDcmdlist.append("--analysis no");
     }
+
+    if (!maf.isNull())
+    {
+        PCAcmdlist.append(" --maf " + maf);
+        LDcmdlist.append(" --maf " + maf);
+    }
+    if (!mind.isNull())
+    {
+        PCAcmdlist.append(" --mind " + mind);
+        LDcmdlist.append(" --maf " + maf);
+    }
+    if (!geno.isNull())
+    {
+        PCAcmdlist.append(" --geno " + geno);
+        LDcmdlist.append(" --maf " + maf);
+    }
+
+    emit runningMsgWidgetClearText();
+    emit runningMsgWidgetAppendText("PCA:");
+    emit runningMsgWidgetAppendText(PCAcmdlist);
+    emit runningMsgWidgetAppendText("");
+    emit runningMsgWidgetAppendText("");
+    emit runningMsgWidgetAppendText("");
+    emit runningMsgWidgetAppendText("");
     emit runningMsgWidgetAppendText("LD:");
     emit runningMsgWidgetAppendText(LDcmdlist);
 
@@ -376,7 +396,7 @@ void MainWindow::annotationCmdButton_clicked()
     }
     if (refSeqFilePath.isNull() || refSeqFilePath.isEmpty())
     {
-        emit setMsgBoxSig("Error", "Gene reference fasta file is necessary! ");
+        emit setMsgBoxSig("Error", "Reference sequence file is necessary! ");
         return;
         // throw -1;
     }
@@ -1037,7 +1057,8 @@ bool MainWindow::callGemmaGwas(QString phenotype, QString genotype, QString map,
         transformFileFlag = true;
     }
 
-    if (genotype.split(".")[genotype.split(".").length()-1] == "bed")
+    if ((!maf.isNull() || !mind.isNull() || !geno.isNull()) &&
+            genotype.split(".")[genotype.split(".").length()-1] == "bed")
     {   // When don't set any QC param, it won't execute.
         plink.filterBinaryFile(genoFileAbPath+"/"+genoFileBaseName, maf, mind, geno, binaryFile);
         filterDataFlag = true;
@@ -1049,6 +1070,10 @@ bool MainWindow::callGemmaGwas(QString phenotype, QString genotype, QString map,
         {
             return false;
         }
+    }
+    else
+    {
+        binaryFile = genoFileAbPath + "/" + genoFileBaseName;
     }
 
     Gemma gemma;
@@ -1316,7 +1341,8 @@ bool MainWindow::callEmmaxGwas(QString phenotype, QString genotype, QString map,
         transformFileFlag = true;
     }
 
-    if (genotype.split(".")[genotype.split(".").length()-1] == "tped")  // Transform "binary" to "transpose"
+    if ((!maf.isNull() || !mind.isNull() || !geno.isNull()) &&
+            genotype.split(".")[genotype.split(".").length()-1] == "tped")  // Filter
     {
         if (map.isNull())
         {
@@ -1335,6 +1361,11 @@ bool MainWindow::callEmmaxGwas(QString phenotype, QString genotype, QString map,
         fileReader->completeTfamFromPheno(phenotype, transposeFile+".tfam");
         transformFileFlag = true;
     }
+    else
+    {
+        transposeFile = genoFileAbPath + "/" + genoFileBaseName;
+    }
+
     Emmax emmax;
     if (kinship.isNull() && emmaxParamWidget->isMakeKinAuto())
     {
@@ -2259,22 +2290,81 @@ void MainWindow::on_pcaRunPushButton_clicked()
         QFuture<void> fu = QtConcurrent::run([&]()
         {
             QString genotype = this->fileReader->getGenotypeFile();
-            QFileInfo genoFileInfo(genotype);
-            QString genoFileAbPath = genoFileInfo.absolutePath();
-            QString genoFileBaseName = genoFileInfo.baseName();
             QString map = this->fileReader->getMapFile();
             QString out = this->workDirectory->getOutputDirectory();
             QString name = this->workDirectory->getProjectName();
+            QString maf = ui->mafRadioButton->isChecked()? ui->mafDoubleSpinBox->text():nullptr;
+            QString mind = ui->mindRadioButton->isChecked()? ui->mindDoubleSpinBox->text():nullptr;
+            QString geno = ui->genoRadioButton->isChecked()? ui->genoDoubleSpinBox->text():nullptr;
+
+            // Genotype file info.
+            QFileInfo genoFileInfo(genotype);
+            QString genoFileName = genoFileInfo.fileName();         // demo.vcf.gz    // demo
+            QString genoFileSuffix = genoFileInfo.suffix();         // gz
+            QString genoFileAbPath = genoFileInfo.absolutePath();
+            QString genoFileBaseName = genoFileInfo.baseName();
             //  binaryFile: Set a default path. Binary geno file with paht without suffix.
             QString binaryFile = genoFileAbPath+"/"+genoFileBaseName+"_tmp";
 
+            // Necessary to transform file ?
             bool transformFileFlag = false;
+            bool filterDataFlag = false;
 
             // Need binary files.  Every temp file and a "_tmp" after baseName, and will be deleted after gwas.
             Plink plink;
+
+            if (qualityControl->isLinkageFilterNeeded())
+            {
+                QString linkageFilteredFilePrefix = genoFileAbPath + "/" + genoFileBaseName + "_ldfl";
+                QString winSize, stepLen, r2Threshold;
+                this->qualityControl->getLinkageFilterType(winSize, stepLen, r2Threshold);
+                plink.linkageFilter(genotype, map, winSize, stepLen, r2Threshold, linkageFilteredFilePrefix);
+
+                if (!runExTool(this->toolpath+"plink", plink.getParamList()))
+                {
+                    throw -1;
+                }
+
+                QString filteredSnpIDFile = linkageFilteredFilePrefix + ".prune.in";
+
+                if (!this->checkoutExistence(filteredSnpIDFile))
+                {
+                    emit setMsgBoxSig("Error", "Linkage filter error.");
+                    throw -1;
+                }
+
+                plink.extractBySnpNameFile(genotype, map, filteredSnpIDFile, linkageFilteredFilePrefix);
+
+                if (!runExTool(this->toolpath+"plink", plink.getParamList()))
+                {
+                    throw -1;
+                }
+
+                genotype = linkageFilteredFilePrefix + ".ped";
+                map = linkageFilteredFilePrefix + ".map";
+                genoFileName = genoFileBaseName + "_ldfl";
+
+                if (checkoutExistence(linkageFilteredFilePrefix+".log") ||
+                        checkoutExistence(linkageFilteredFilePrefix + ".nosex"))
+                {
+                    QFile file;
+                    file.remove(linkageFilteredFilePrefix+".log");
+                    file.remove(linkageFilteredFilePrefix+".nosex");
+                }
+
+                if (!this->checkoutExistence(genotype) ||
+                        !this->checkoutExistence(map))
+                {
+                    emit setMsgBoxSig("Error", "Extaract snp after linkage filter error.");
+                    throw -1;
+                }
+            }
+
+
+            // Need binary files.  Every temp file and a "_tmp" after baseName, and will be deleted after gwas.
             if (isVcfFile(genotype)) // Transform "vcf" to "transpose"
             {
-                if(!plink.vcf2binary(genotype, binaryFile, nullptr, nullptr, nullptr))
+                if(!plink.vcf2binary(genotype, binaryFile, maf, mind, geno))
                 {
                     throw -1;
                 }
@@ -2287,7 +2377,7 @@ void MainWindow::on_pcaRunPushButton_clicked()
                 {
                     map = genoFileAbPath+"/"+genoFileBaseName+".map";
                 }
-                if (!plink.plink2binary(genotype, map, binaryFile, nullptr, nullptr, nullptr))
+                if (!plink.plink2binary(genotype, map, binaryFile, maf, mind, geno))
                 {
                     throw -1;
                 }
@@ -2301,18 +2391,25 @@ void MainWindow::on_pcaRunPushButton_clicked()
                 {
                     map = genoFileAbPath+"/"+genoFileBaseName+".tfam";
                 }
-                if (!plink.transpose2binary(genotype, map, binaryFile, nullptr, nullptr, nullptr))
+                if (!plink.transpose2binary(genotype, map, binaryFile, maf, mind, geno))
                 {
                     throw -1;
                 }
                 transformFileFlag = true;
             }
 
-            if (transformFileFlag)
+            if ((!maf.isNull() || !mind.isNull() || !geno.isNull()) &&
+                    genotype.split(".")[genotype.split(".").length()-1] == "bed")
+            {   // When don't set any QC param, it won't execute.
+                plink.filterBinaryFile(genoFileAbPath+"/"+genoFileBaseName, maf, mind, geno, binaryFile);
+                filterDataFlag = true;
+            }
+
+            if (transformFileFlag || filterDataFlag)
             {   // Run plink to transform file or filter data.
                 if (!runExTool(this->toolpath+"plink", plink.getParamList()))
                 {
-                    return;
+                    throw -1;
                 }
             }
             else
@@ -2454,14 +2551,129 @@ void MainWindow::runPopLDdecaybyFamily(void)
         QString name(this->workDirectory->getProjectName());
         QString genotype(this->fileReader->getGenotypeFile());
         QString map(this->fileReader->getMapFile());
+        // Genotype file info.
         QFileInfo genoFileInfo(genotype);
-        QString genoFileSuffix = genoFileInfo.suffix();
-        QString genoFileBaseName = genoFileInfo.baseName();
+        QString genoFileName = genoFileInfo.fileName();         // demo.vcf.gz    // demo
+        QString genoFileSuffix = genoFileInfo.suffix();         // gz
         QString genoFileAbPath = genoFileInfo.absolutePath();
+        QString genoFileBaseName = genoFileInfo.baseName();
         QStringList keepFileList;
+        QString maf = ui->mafRadioButton->isChecked()? ui->mafDoubleSpinBox->text():nullptr;
+        QString mind = ui->mindRadioButton->isChecked()? ui->mindDoubleSpinBox->text():nullptr;
+        QString geno = ui->genoRadioButton->isChecked()? ui->genoDoubleSpinBox->text():nullptr;
+
 
         Plink plink;
         PopLDdecay popLDdecay;
+
+        //  plinkFile: Set a default path. Plink geno file with paht without suffix.
+        QString plinkFile = genoFileAbPath+"/"+genoFileBaseName+"_tmp";
+
+        // Necessary to transform file ?
+        bool transformFileFlag = false;
+        bool filterDataFlag = false;
+
+        if (qualityControl->isLinkageFilterNeeded())
+        {
+            QString linkageFilteredFilePrefix = genoFileAbPath + "/" + genoFileBaseName + "_ldfl";
+            QString winSize, stepLen, r2Threshold;
+            this->qualityControl->getLinkageFilterType(winSize, stepLen, r2Threshold);
+            plink.linkageFilter(genotype, map, winSize, stepLen, r2Threshold, linkageFilteredFilePrefix);
+
+            if (!runExTool(this->toolpath+"plink", plink.getParamList()))
+            {
+                throw -1;
+            }
+
+            QString filteredSnpIDFile = linkageFilteredFilePrefix + ".prune.in";
+
+            if (!this->checkoutExistence(filteredSnpIDFile))
+            {
+                emit setMsgBoxSig("Error", "Linkage filter error.");
+                throw -1;
+            }
+
+            plink.extractBySnpNameFile(genotype, map, filteredSnpIDFile, linkageFilteredFilePrefix);
+
+            if (!runExTool(this->toolpath+"plink", plink.getParamList()))
+            {
+                throw -1;
+            }
+
+            genotype = linkageFilteredFilePrefix + ".ped";
+            map = linkageFilteredFilePrefix + ".map";
+            genoFileName = genoFileBaseName + "_ldfl";
+
+            if (checkoutExistence(linkageFilteredFilePrefix+".log") ||
+                    checkoutExistence(linkageFilteredFilePrefix + ".nosex"))
+            {
+                QFile file;
+                file.remove(linkageFilteredFilePrefix+".log");
+                file.remove(linkageFilteredFilePrefix+".nosex");
+            }
+
+            if (!this->checkoutExistence(genotype) ||
+                    !this->checkoutExistence(map))
+            {
+                emit setMsgBoxSig("Error", "Extaract snp after linkage filter error.");
+                throw -1;
+            }
+        }
+        if (isVcfFile(genotype)) // Transform "vcf" to "transpose"
+        {
+            if(!plink.vcf2plink(genotype, plinkFile, maf, mind, geno))
+            {
+                throw -1;
+            }
+
+            transformFileFlag = true;
+        }
+        if (genotype.split(".")[genotype.split(".").length()-1] == "bed")  // Transform "plink" to "binary"
+        {
+            if (!plink.binary2plink(genoFileAbPath+"/"+genoFileBaseName, plinkFile, maf, mind, geno))
+            {
+                throw -1;
+            }
+
+            transformFileFlag = true;
+        }
+
+        if (genotype.split(".")[genotype.split(".").length()-1] == "tped")  // Transform "transpose" to "binary"
+        {
+            if (map.isNull())
+            {
+                map = genoFileAbPath+"/"+genoFileBaseName+".tfam";
+            }
+            if (!plink.transpose2plink(genotype, map, plinkFile, maf, mind, geno))
+            {
+                throw -1;
+            }
+            transformFileFlag = true;
+        }
+
+        if ((!maf.isNull() || !mind.isNull() || !geno.isNull()) &&
+                genotype.split(".")[genotype.split(".").length()-1] == "ped")
+        {
+            if (map.isNull())
+            {
+                map = genoFileAbPath+"/"+genoFileBaseName+".map";
+            }
+            plink.filterData(genotype, map, maf, mind, geno, plinkFile);
+            filterDataFlag = true;
+        }
+
+        if (transformFileFlag || filterDataFlag)
+        {   // Run plink to transform file or filter data.
+            if (!runExTool(this->toolpath+"plink", plink.getParamList()))
+            {
+                return;
+            }
+        }
+        else
+        {
+            plinkFile = genoFileAbPath + "/" + genoFileBaseName;
+        }
+
         if (isVcfFile(genotype)){} // Transform "vcf" to "transpose"
 
         // Make .keep file.
@@ -2502,17 +2714,18 @@ void MainWindow::runPopLDdecaybyFamily(void)
             {
                 map = map.isNull() ? genoFileAbPath+"/"+genoFileBaseName+".map" : map;
                 plink.splitPlinkFile(genotype, map, keepFile,
-                                     genoFileAbPath+"/"+keepFileBaseName);
+                                     genoFileAbPath+"/"+keepFileBaseName, maf, mind, geno);
             }
             if (genoFileSuffix == "tped")
             {
                 map = map.isNull() ? genoFileAbPath+"/"+genoFileBaseName+".tfam" : map;
                 plink.splitTransposeFile(genotype, map, keepFile,
-                                         genoFileAbPath+"/"+keepFileBaseName);
+                                         genoFileAbPath+"/"+keepFileBaseName, maf, mind, geno);
             }
             if (genoFileSuffix == "bed")
             {
-                plink.splitBinaryFile(genoFileAbPath+"/"+genoFileBaseName, keepFile, genoFileAbPath+"/"+keepFileBaseName);
+                plink.splitBinaryFile(genoFileAbPath+"/"+genoFileBaseName, keepFile,
+                                      genoFileAbPath+"/"+keepFileBaseName, maf, mind, geno);
             }
 
             if (!this->runExTool(this->toolpath+"plink", plink.getParamList()))
@@ -2613,29 +2826,82 @@ void MainWindow::runPopLDdecaySingle(void)
         QString genotype = this->fileReader->getGenotypeFile();
         QFileInfo genoFileInfo(genotype);
         QString genoFileAbPath = genoFileInfo.absolutePath();
+        QString genoFileName = genoFileInfo.fileName();
         QString genoFileBaseName = genoFileInfo.baseName();
         QString map = this->fileReader->getMapFile();
         QString out = this->workDirectory->getOutputDirectory();
         QString name = this->workDirectory->getProjectName();
-        //  binaryFile: Set a default path. Binary geno file with paht without suffix.
+        //  plinkFile: Set a default path. Plink geno file with paht without suffix.
         QString plinkFile = genoFileAbPath+"/"+genoFileBaseName+"_tmp";
 
-        bool transformFileFlag = false;
+        QString maf = ui->mafRadioButton->isChecked()? ui->mafDoubleSpinBox->text():nullptr;
+        QString mind = ui->mindRadioButton->isChecked()? ui->mindDoubleSpinBox->text():nullptr;
+        QString geno = ui->genoRadioButton->isChecked()? ui->genoDoubleSpinBox->text():nullptr;
 
-        // Need binary files.  Every temp file and a "_tmp" after baseName, and will be deleted after gwas.
+        bool transformFileFlag = false;
+        bool filterDataFlag = false;
+
+        // Need plink files.  Every temp file and a "_tmp" after baseName, and will be deleted after gwas.
         Plink plink;
+
+        if (qualityControl->isLinkageFilterNeeded())
+        {
+            QString linkageFilteredFilePrefix = genoFileAbPath + "/" + genoFileBaseName + "_ldfl";
+            QString winSize, stepLen, r2Threshold;
+            this->qualityControl->getLinkageFilterType(winSize, stepLen, r2Threshold);
+            plink.linkageFilter(genotype, map, winSize, stepLen, r2Threshold, linkageFilteredFilePrefix);
+
+            if (!runExTool(this->toolpath+"plink", plink.getParamList()))
+            {
+                throw -1;
+            }
+
+            QString filteredSnpIDFile = linkageFilteredFilePrefix + ".prune.in";
+
+            if (!this->checkoutExistence(filteredSnpIDFile))
+            {
+                emit setMsgBoxSig("Error", "Linkage filter error.");
+                throw -1;
+            }
+
+            plink.extractBySnpNameFile(genotype, map, filteredSnpIDFile, linkageFilteredFilePrefix);
+
+            if (!runExTool(this->toolpath+"plink", plink.getParamList()))
+            {
+                throw -1;
+            }
+
+            genotype = linkageFilteredFilePrefix + ".ped";
+            map = linkageFilteredFilePrefix + ".map";
+            genoFileName = genoFileBaseName + "_ldfl";
+
+            if (checkoutExistence(linkageFilteredFilePrefix+".log") ||
+                    checkoutExistence(linkageFilteredFilePrefix + ".nosex"))
+            {
+                QFile file;
+                file.remove(linkageFilteredFilePrefix+".log");
+                file.remove(linkageFilteredFilePrefix+".nosex");
+            }
+
+            if (!this->checkoutExistence(genotype) ||
+                    !this->checkoutExistence(map))
+            {
+                emit setMsgBoxSig("Error", "Extaract snp after linkage filter error.");
+                throw -1;
+            }
+        }
         if (isVcfFile(genotype)) // Transform "vcf" to "transpose"
         {
-            if(!plink.vcf2plink(genotype, plinkFile, nullptr, nullptr, nullptr))
+            if(!plink.vcf2plink(genotype, plinkFile, maf, mind, geno))
             {
                 throw -1;
             }
 
             transformFileFlag = true;
         }
-        if (genotype.split(".")[genotype.split(".").length()-1] == "bed")  // Transform "plink" to "binary"
+        if (genotype.split(".")[genotype.split(".").length()-1] == "bed")  // Transform "plink" to "plink"
         {
-            if (!plink.binary2plink(genoFileAbPath+"/"+genoFileBaseName, plinkFile, nullptr, nullptr, nullptr))
+            if (!plink.binary2plink(genoFileAbPath+"/"+genoFileBaseName, plinkFile, maf, mind, geno))
             {
                 throw -1;
             }
@@ -2643,20 +2909,31 @@ void MainWindow::runPopLDdecaySingle(void)
             transformFileFlag = true;
         }
 
-        if (genotype.split(".")[genotype.split(".").length()-1] == "tped")  // Transform "transpose" to "binary"
+        if (genotype.split(".")[genotype.split(".").length()-1] == "tped")  // Transform "transpose" to "plink"
         {
             if (map.isNull())
             {
                 map = genoFileAbPath+"/"+genoFileBaseName+".tfam";
             }
-            if (!plink.transpose2plink(genotype, map, plinkFile, nullptr, nullptr, nullptr))
+            if (!plink.transpose2plink(genotype, map, plinkFile, maf, mind, geno))
             {
                 throw -1;
             }
             transformFileFlag = true;
         }
 
-        if (transformFileFlag)
+        if ((!maf.isNull() || !mind.isNull() || !geno.isNull()) &&
+                genotype.split(".")[genotype.split(".").length()-1] == "ped")
+        {
+            if (map.isNull())
+            {
+                map = genoFileAbPath+"/"+genoFileBaseName+".map";
+            }
+            plink.filterData(genotype, map, maf, mind, geno, plinkFile);
+            filterDataFlag = true;
+        }
+
+        if (transformFileFlag || filterDataFlag)
         {   // Run plink to transform file or filter data.
             if (!runExTool(this->toolpath+"plink", plink.getParamList()))
             {
@@ -3349,7 +3626,7 @@ void MainWindow::on_annotationRunButton_clicked()
         }
         if (refSeqFilePath.isNull() || avinputFilePath.isEmpty())
         {
-            emit setMsgBoxSig("Error", "Gene reference fasta file is necessary! ");
+            emit setMsgBoxSig("Error", "Reference sequence file is necessary! ");
             throw -1;
         }
 

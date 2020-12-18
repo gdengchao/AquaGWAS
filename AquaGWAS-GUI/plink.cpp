@@ -695,6 +695,15 @@ void Plink::filterTransposeFile(QString genotype, QString map, QString maf, QStr
     this->paramlist.append(out);
 }
 
+/**
+ * @brief Plink::filterData
+ * @param genotype
+ * @param map
+ * @param maf
+ * @param mind
+ * @param geno
+ * @param out       Transpose file
+ */
 void Plink::filterData(QString genotype, QString map, QString maf, QString mind, QString geno, QString out)
 {
     if (genotype.isNull() || map.isNull())
@@ -756,7 +765,7 @@ bool Plink::isVcfFile(QString file) // Just consider filename.
     return false;
 }
 
-void Plink::splitVcfFile(QString vcfFile, QString keepFile, QString out)
+void Plink::splitVcfFile(QString vcfFile, QString keepFile, QString out, QString maf, QString mind, QString geno)
 {
     if (vcfFile.isNull() ||  keepFile.isNull())
     {
@@ -770,9 +779,24 @@ void Plink::splitVcfFile(QString vcfFile, QString keepFile, QString out)
     this->paramlist.append("--recode");
     this->paramlist.append("--out");
     this->paramlist.append(out);
+    if (!maf.isNull())
+    {
+        this->paramlist.append("--maf");
+        this->paramlist.append(maf);
+    }
+    if (!mind.isNull())
+    {
+        this->paramlist.append("--mind");
+        this->paramlist.append(mind);
+    }
+    if (!geno.isNull())
+    {
+        this->paramlist.append("--geno");
+        this->paramlist.append(geno);
+    }
 }
 
-void Plink::splitPlinkFile(QString ped, QString map, QString keepFile, QString out)
+void Plink::splitPlinkFile(QString ped, QString map, QString keepFile, QString out, QString maf, QString mind, QString geno)
 {
     if (ped.isNull() || map.isNull() ||  keepFile.isNull())
     {
@@ -788,9 +812,24 @@ void Plink::splitPlinkFile(QString ped, QString map, QString keepFile, QString o
     this->paramlist.append("--recode");
     this->paramlist.append("--out");
     this->paramlist.append(out);
+    if (!maf.isNull())
+    {
+        this->paramlist.append("--maf");
+        this->paramlist.append(maf);
+    }
+    if (!mind.isNull())
+    {
+        this->paramlist.append("--mind");
+        this->paramlist.append(mind);
+    }
+    if (!geno.isNull())
+    {
+        this->paramlist.append("--geno");
+        this->paramlist.append(geno);
+    }
 }
 
-void Plink::splitBinaryFile(QString binaryFile, QString keepFile, QString out)
+void Plink::splitBinaryFile(QString binaryFile, QString keepFile, QString out, QString maf, QString mind, QString geno)
 {
     if (binaryFile.isNull() ||  keepFile.isNull())
     {
@@ -811,9 +850,24 @@ void Plink::splitBinaryFile(QString binaryFile, QString keepFile, QString out)
     this->paramlist.append("--recode");
     this->paramlist.append("--out");
     this->paramlist.append(out);
+    if (!maf.isNull())
+    {
+        this->paramlist.append("--maf");
+        this->paramlist.append(maf);
+    }
+    if (!mind.isNull())
+    {
+        this->paramlist.append("--mind");
+        this->paramlist.append(mind);
+    }
+    if (!geno.isNull())
+    {
+        this->paramlist.append("--geno");
+        this->paramlist.append(geno);
+    }
 }
 
-void Plink::splitTransposeFile(QString tped, QString tfam, QString keepFile, QString out)
+void Plink::splitTransposeFile(QString tped, QString tfam, QString keepFile, QString out, QString maf, QString mind, QString geno)
 {
     if (tped.isNull() || tfam.isNull() ||  keepFile.isNull())
     {
@@ -829,5 +883,20 @@ void Plink::splitTransposeFile(QString tped, QString tfam, QString keepFile, QSt
     this->paramlist.append("--recode");
     this->paramlist.append("--out");
     this->paramlist.append(out);
+    if (!maf.isNull())
+    {
+        this->paramlist.append("--maf");
+        this->paramlist.append(maf);
+    }
+    if (!mind.isNull())
+    {
+        this->paramlist.append("--mind");
+        this->paramlist.append(mind);
+    }
+    if (!geno.isNull())
+    {
+        this->paramlist.append("--geno");
+        this->paramlist.append(geno);
+    }
 }
 
