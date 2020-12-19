@@ -18,6 +18,7 @@ color = Sample		# Use the default color that is automatically assigned
 PC1=round(eigenvalue[1,1]/sum(eigenvalue),4)	# 
 PC2=round(eigenvalue[2,1]/sum(eigenvalue),4)
 
+column = ceiling(length(unique(Sample))/20);		# No more than 20 legend in a column
 # Set output file name.
 baseName <- as.character(basename(output)) 
 suffix <- as.character(unlist(strsplit(baseName, split <- "\\.")))
@@ -25,14 +26,13 @@ suffix <- as.character(suffix[length(suffix)])
 
 if (suffix == "png")
 {
-    png(file = output, width=1000,height=1000)
+    png(file = output, width=800+20*column,height=800)
 }
 if (suffix == "jpeg" || suffix == "jpg")
 {
-    jpeg(file = output, width=1000,height=1000)
+    jpeg(file = output, width=800+20*column,height=800)
 }
 
-column = ceiling(length(unique(Sample))/20);		# No more than 20 legend in a column
 par(mar=c(5.1, 4.1, 4.1, 4*(column+1)+0.1), xpd=TRUE)	# Reserve space in the right
 plot(X, Y, main="Principal component",
      xlab=paste("PC1 - ", PC1*100, "%", sep=""),
