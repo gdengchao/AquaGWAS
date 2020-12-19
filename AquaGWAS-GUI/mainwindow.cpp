@@ -26,6 +26,10 @@ MainWindow::MainWindow(QWidget *parent)
     ui->mindDoubleSpinBox->setValue(0.20);
     ui->genoDoubleSpinBox->setValue(0.05);
 
+    // FID complete controler
+    ui->fidFileLineEdit->setEnabled(false);
+    ui->fidFileFileBrowButton->setEnabled(false);
+
     // Initiate variables.
     fileReader = new FileReader;
     workDirectory = new WorkDirectory;
@@ -2286,6 +2290,9 @@ void MainWindow::on_pcaRunPushButton_clicked()
     ui->pcaRunPushButton->setEnabled(false);
     qApp->processEvents();
 
+    bool completeFidFlag = ui->compleFIDMafRadioButton->isChecked();
+    QString fidFile = ui->fidFileLineEdit->text();
+
     try {
         QFuture<void> fu = QtConcurrent::run([&]()
         {
@@ -2416,6 +2423,20 @@ void MainWindow::on_pcaRunPushButton_clicked()
             {
                 binaryFile = genoFileAbPath + "/" + genoFileBaseName;
             }
+
+            // Complete FID info.
+            if (completeFidFlag)
+            {
+                emit runningMsgWidgetAppendText("Complete FID, \n");
+                QString famFilePath = binaryFile + ".fam";
+                if (!fileReader->completeFIDofTfam(fidFile, famFilePath))
+                {
+                    emit runningMsgWidgetAppendText("Complete FID ERROR.\n");
+                    throw -1;
+                }
+                emit runningMsgWidgetAppendText("Complete FID OK.\n");
+            }
+
 
             // Mkae GRM
             Gcta gcta;
@@ -3753,4 +3774,29 @@ void MainWindow::on_annoStepPushButton_clicked()
     qApp->processEvents();
     this->resetWindow();
     this->runningFlag = false;
+}
+
+void MainWindow::on_compleFIDMafRadioButton_clicked()
+{
+    ui->fidFileLineEdit->setEnabled(ui->compleFIDMafRadioButton->isChecked());
+    ui->fidFileFileBrowButton->setEnabled(ui->compleFIDMafRadioButton->isChecked());
+}
+
+void MainWindow::on_fidFileFileBrowButton_clicked()
+{
+    QFileDialog *fileDialog = new QFileDialog(this, "Open FID info file", "", "all(*)");
+    fileDialog->setViewMode(QFileDialog::Detail);
+
+    QStringList fileNames;
+    if (fileDialog->exec())
+    {
+        fileNames = fileDialog->selectedFiles();
+    }
+    delete fileDialog;
+    if (fileNames.isEmpty())    // If didn't choose any file.
+    {
+        return;
+    }
+
+    ui->fidFileLineEdit->setText(fileNames[0]);
 }

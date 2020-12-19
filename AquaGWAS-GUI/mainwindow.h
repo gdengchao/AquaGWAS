@@ -127,6 +127,10 @@ private slots:
    void pca_ld_cmdButton_clicked();
    void annotationCmdButton_clicked();
 
+   void on_compleFIDMafRadioButton_clicked();
+
+   void on_fidFileFileBrowButton_clicked();
+
 private:
     Ui::MainWindow *ui;
     volatile bool runningFlag = false;   // A flag t judge there running project.

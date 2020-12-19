@@ -1,6 +1,7 @@
 #ifndef FILEREADER_H
 #define FILEREADER_H
 
+#include <QMap>
 #include <QString>
 #include <QDebug>
 #include <QFileInfo>
@@ -27,6 +28,8 @@ public:
     bool makeAvinputAndSnpposFile(QString vcfFilePath, QString pvalFilePath,
                                   QString avinputFilePath, QString snpPosFilePath);
     bool completeTfamFromPheno(QString phenoFilePath, QString tfamFilePath);
+    bool completeFIDofTfam(QString fidFilePath, QString tfamFilePath);
+    bool completeFIDofPed(QString fidFilePath, QString pedFilePath);
     bool isNumber(QString str);
 private:
     QString phenotypeFile;

@@ -123,10 +123,12 @@ int main(int argc, char *argv[])
 //                                    "/media/dengchao/data/data/Funcional_anno/func_anno_res");
 
 //    FileReader fileReader;
-//    fileReader.completeTfamFromPheno("/mnt/my_share/dchao/data/test_data/test_data/phenotmp.txt", "/mnt/my_share/dchao/data/test_data/test_data/test.tfam");
+//    fileReader.completeFIDofTfam("/home/yingwang/Desktop/fid_info", "/home/yingwang/Desktop/222_filter1.tfam");
+    //    fileReader.completeTfamFromPheno("/mnt/my_share/dchao/data/test_data/test_data/phenotmp.txt", "/mnt/my_share/dchao/data/test_data/test_data/test.tfam");
 
     MainWindow w;
     w.show();
 
     return a.exec();
+
 }

@@ -84,6 +84,7 @@ void RunningMsgWidget::closeEvent(QCloseEvent *event)
 
 void RunningMsgWidget::on_appendText(QString text)
 {
+    qDebug() << text;
     this->appendText(text);
 }
 
