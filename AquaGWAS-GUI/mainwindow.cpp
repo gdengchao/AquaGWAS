@@ -2594,6 +2594,9 @@ void MainWindow::runPopLDdecaybyFamily(void)
         bool transformFileFlag = false;
         bool filterDataFlag = false;
 
+        bool fidCompleteFlag = ui->compleFIDMafRadioButton->isChecked();
+        QString fidFile = ui->fidFileLineEdit->text();
+
         if (qualityControl->isLinkageFilterNeeded())
         {
             QString linkageFilteredFilePrefix = genoFileAbPath + "/" + genoFileBaseName + "_ldfl";
@@ -2703,16 +2706,46 @@ void MainWindow::runPopLDdecaybyFamily(void)
         QThread::msleep(10);
         if (genoFileSuffix == "ped")
         {
+            if (fidCompleteFlag)
+            {
+                emit runningMsgWidgetAppendText("Complete FID, \n");
+                if (!fileReader->completeFIDofPed(fidFile, genotype))
+                {
+                    emit runningMsgWidgetAppendText("Complete FID ERROR! \n");
+                    throw -1;
+                }
+                emit runningMsgWidgetAppendText("Complete FID OK \n");
+            }
             keepFileList = popLDdecay.makeKeepFile(genotype);
         }
         if (genoFileSuffix == "tped")
         {
             map = map.isNull() ? genoFileAbPath+"/"+genoFileBaseName+".tfam" : map;
+            if (fidCompleteFlag)
+            {
+                emit runningMsgWidgetAppendText("Complete FID, \n");
+                if (!fileReader->completeFIDofTfam(fidFile, map))
+                {
+                    emit runningMsgWidgetAppendText("Complete FID ERROR!\n");
+                    throw -1;
+                }
+                emit runningMsgWidgetAppendText("Complete FID OK.\n");
+            }
             keepFileList = popLDdecay.makeKeepFile(map);
         }
         if (genoFileSuffix == "bed")
         {
             map = map.isNull() ? genoFileAbPath+"/"+genoFileBaseName+".fam" : map;
+            if (fidCompleteFlag)
+            {
+                emit runningMsgWidgetAppendText("Complete FID, \n");
+                if (!fileReader->completeFIDofTfam(fidFile, map))
+                {
+                    emit runningMsgWidgetAppendText("Complete FID ERROR!\n");
+                    throw -1;
+                }
+                emit runningMsgWidgetAppendText("Complete FID OK.\n");
+            }
             keepFileList = popLDdecay.makeKeepFile(map);
         }
 
