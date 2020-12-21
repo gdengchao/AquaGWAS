@@ -86,7 +86,7 @@ QStringList FileReader::getFIDList(QString const src, int col)
         {   // Append to FID list if not in FID list.
             fidList.append(curLine[col-1]);
         }
-      //  qApp->processEvents();  // Prevent "no responding" of MainWindow.
+//        qApp->processEvents();  // Prevent "no responding" of MainWindow.
     }
     return fidList;
 }
@@ -251,17 +251,26 @@ bool FileReader::completeTfamFromPheno(QString phenoFilePath, QString tfamFilePa
     QTextStream tfamFileStream(&tfamFile);
     QTextStream tmpTfamFileStream(&tmpTfamFile);
 
-    while (!phenoFileStream.atEnd() || !tfamFileStream.atEnd())
+    QMap<QString, QString> fidMap;
+    QStringList fidInfo = phenoFileStream.readAll().split("\n");
+    for (auto line : fidInfo)
     {
-        QStringList phenoCurLineList = phenoFileStream.readLine().split(QRegExp("\\s+"), QString::SkipEmptyParts);
+        QStringList curLineList = line.split(QRegExp("\\s+"));
+        if (curLineList.length() >= 2)
+        {
+            fidMap[curLineList[1]] = curLineList[0];
+        }
+    }
+
+    while (!tfamFileStream.atEnd())
+    {
         QStringList tfamCurLineList = tfamFileStream.readLine().split(QRegExp("\\s+"), QString::SkipEmptyParts);
 
-        if (phenoCurLineList[1] != tfamCurLineList[1])
+        if (fidMap.find(tfamCurLineList[1]) != fidMap.end())
         {   // IID don't match
-            return false;
+            tfamCurLineList[0] = fidMap[tfamCurLineList[1]];
         }
 
-        tfamCurLineList[0] = phenoCurLineList[0];
 
         tmpTfamFileStream << tfamCurLineList.join("\t") << endl;
     }
@@ -272,6 +281,225 @@ bool FileReader::completeTfamFromPheno(QString phenoFilePath, QString tfamFilePa
 
     tfamFile.remove();
     tmpTfamFile.rename(tfamFilePath);
+
+    return true;
+}
+//bool FileReader::completeTfamFromPheno(QString phenoFilePath, QString tfamFilePath)
+//{
+//    if (phenoFilePath.isNull() || tfamFilePath.isNull())
+//    {
+//        return false;
+//    }
+
+//    QFile phenoFile(phenoFilePath);
+//    QFile tfamFile(tfamFilePath);
+
+//    if (!phenoFile.open(QIODevice::ReadOnly) ||
+//        !tfamFile.open(QIODevice::ReadOnly))
+//    {
+//        return false;
+//    }
+
+//    QString tmpTfamFilePath = tfamFilePath+".tmp";
+//    QFile tmpTfamFile(tmpTfamFilePath);
+//    if (!tmpTfamFile.open(QIODevice::WriteOnly))
+//    {
+//        return false;
+//    }
+
+//    QTextStream phenoFileStream(&phenoFile);
+//    QTextStream tfamFileStream(&tfamFile);
+//    QTextStream tmpTfamFileStream(&tmpTfamFile);
+
+//    while (!phenoFileStream.atEnd() || !tfamFileStream.atEnd())
+//    {
+//        QStringList phenoCurLineList = phenoFileStream.readLine().split(QRegExp("\\s+"), QString::SkipEmptyParts);
+//        QStringList tfamCurLineList = tfamFileStream.readLine().split(QRegExp("\\s+"), QString::SkipEmptyParts);
+
+//        if (phenoCurLineList[1] != tfamCurLineList[1])
+//        {   // IID don't match
+//            return false;
+//        }
+
+//        tfamCurLineList[0] = phenoCurLineList[0];
+
+//        tmpTfamFileStream << tfamCurLineList.join("\t") << endl;
+//    }
+
+//    phenoFile.close();
+//    tfamFile.close();
+//    tmpTfamFile.close();
+
+//    tfamFile.remove();
+//    tmpTfamFile.rename(tfamFilePath);
+
+//    return true;
+//}
+
+/**
+ * @brief FileReader::completeFIDofTfam
+ * @param fidFilePath: FID IID (PID MID SEX)
+ * @param tfamFilePath
+ * @return
+ */
+bool FileReader::completeFIDofTfam(QString fidFilePath, QString tfamFilePath)
+{
+    if (fidFilePath.isNull() || tfamFilePath.isNull())
+    {
+        return false;
+    }
+
+    QFile fidFile(fidFilePath);
+    QFile tfamFile(tfamFilePath);
+
+    if (!fidFile.open(QIODevice::ReadOnly) ||
+        !tfamFile.open(QIODevice::ReadOnly))
+    {
+        return false;
+    }
+
+    QString tmpTfamFilePath = tfamFilePath+".tmp";
+    QFile tmpTfamFile(tmpTfamFilePath);
+    if (!tmpTfamFile.open(QIODevice::WriteOnly))
+    {
+        return false;
+    }
+
+    QTextStream fidFileStream(&fidFile);
+    QTextStream tfamFileStream(&tfamFile);
+    QTextStream tmpTfamFileStream(&tmpTfamFile);
+
+    QMap<QString, QStringList> fidMap;
+    QStringList fidInfo = fidFileStream.readAll().split("\n");
+    for (auto line : fidInfo)
+    {
+        QStringList curLineList = line.split(QRegExp("\\s+"));
+        if (curLineList.length() >= 2 && curLineList.length() < 5)
+        {
+            fidMap[curLineList[1]] = QStringList() << curLineList[0];
+        }
+        else if (curLineList.length() >= 5)
+        {
+            QStringList tmpList;
+            for (int i = 0; i < 5; ++i)
+            {
+                tmpList.append(curLineList[i]);
+            }
+            fidMap[curLineList[1]] = tmpList;
+        }
+        else
+        {
+            continue;
+        }
+    }
+
+    while (!tfamFileStream.atEnd())
+    {
+        QStringList tfamCurLineList = tfamFileStream.readLine().split(QRegExp("\\s+"), QString::SkipEmptyParts);
+
+        if (fidMap.find(tfamCurLineList[1]) != fidMap.end())
+        {   // IID don't match
+            tfamCurLineList[0] = fidMap[tfamCurLineList[1]][0];
+//            tfamCurLineList[0] = fidMap[tfamCurLineList[1]];
+            if (fidMap[tfamCurLineList[1]].length() == 5)
+            {
+                tfamCurLineList[2] = fidMap[tfamCurLineList[1]][2];
+                tfamCurLineList[3] = fidMap[tfamCurLineList[1]][3];
+                tfamCurLineList[4] = fidMap[tfamCurLineList[1]][4];
+            }
+        }
+
+
+        tmpTfamFileStream << tfamCurLineList.join("\t") << endl;
+    }
+
+//    phenoFile.close();
+//    tfamFile.close();
+//    tmpTfamFile.close();
+
+    tfamFile.remove();
+    tmpTfamFile.rename(tfamFilePath);
+
+    return true;
+}
+
+bool FileReader::completeFIDofPed(QString fidFilePath, QString pedFilePath)
+{
+    if (fidFilePath.isNull() || pedFilePath.isNull())
+    {
+        return false;
+    }
+
+    QFile fidFile(fidFilePath);
+    QFile pedFile(pedFilePath);
+
+    if (!fidFile.open(QIODevice::ReadOnly) ||
+        !pedFile.open(QIODevice::ReadOnly))
+    {
+        return false;
+    }
+
+    QString tmpPedFilePath = pedFilePath+".tmp";
+    QFile tmpPedFile(tmpPedFilePath);
+    if (!tmpPedFile.open(QIODevice::WriteOnly))
+    {
+        return false;
+    }
+
+    QTextStream fidFileStream(&fidFile);
+    QTextStream pedFileStream(&pedFile);
+    QTextStream tmpPedFileStream(&tmpPedFile);
+
+    QMap<QString, QStringList> fidMap;
+    QStringList fidInfo = fidFileStream.readAll().split("\n");
+    for (auto line : fidInfo)
+    {
+        QStringList curLineList = line.split(QRegExp("\\s+"));
+        if (curLineList.length() >= 2 && curLineList.length() < 5)
+        {
+            fidMap[curLineList[1]] = QStringList() << curLineList[0];
+        }
+        else if (curLineList.length() >= 5)
+        {
+            QStringList tmpList;
+            for (int i = 0; i < 5; ++i)
+            {
+                tmpList.append(curLineList[i]);
+            }
+            fidMap[curLineList[1]] = tmpList;
+        }
+        else
+        {
+            continue;
+        }
+    }
+
+    while (!pedFileStream.atEnd())
+    {
+        QStringList tfamCurLineList = pedFileStream.readLine().split(QRegExp("\\s+"), QString::SkipEmptyParts);
+
+        if (fidMap.find(tfamCurLineList[1]) != fidMap.end())
+        {   // IID don't match
+            tfamCurLineList[0] = fidMap[tfamCurLineList[1]][0];
+//            tfamCurLineList[0] = fidMap[tfamCurLineList[1]];
+            if (fidMap[tfamCurLineList[1]].length() == 5)
+            {
+                tfamCurLineList[2] = fidMap[tfamCurLineList[1]][2];
+                tfamCurLineList[3] = fidMap[tfamCurLineList[1]][3];
+                tfamCurLineList[4] = fidMap[tfamCurLineList[1]][4];
+            }
+        }
+
+
+        tmpPedFileStream << tfamCurLineList.join("\t") << endl;
+    }
+
+//    phenoFile.close();
+//    tfamFile.close();
+//    tmpTfamFile.close();
+
+    pedFile.remove();
+    tmpPedFile.rename(pedFilePath);
 
     return true;
 }

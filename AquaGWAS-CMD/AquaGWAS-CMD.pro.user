@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE QtCreatorProject>
-<!-- Written by QtCreator 4.11.0, 2020-12-06T20:12:34. -->
+<!-- Written by QtCreator 4.11.0, 2020-12-21T16:32:50. -->
 <qtcreator>
  <data>
   <variable>EnvironmentId</variable>
@@ -287,7 +287,7 @@
     <valuelist type="QVariantList" key="PE.EnvironmentAspect.Changes"/>
     <value type="QString" key="ProjectExplorer.ProjectConfiguration.Id">Qt4ProjectManager.Qt4RunConfiguration:/mnt/my_share/dchao/Aqua/AquaGWAS/AquaGWAS-CMD/AquaGWAS-CMD.pro</value>
     <value type="QString" key="ProjectExplorer.RunConfiguration.BuildKey">/mnt/my_share/dchao/Aqua/AquaGWAS/AquaGWAS-CMD/AquaGWAS-CMD.pro</value>
-    <value type="QString" key="RunConfiguration.Arguments"></value>
+    <value type="QString" key="RunConfiguration.Arguments">--LD -g /home/yingwang/Desktop/Case\ 1/demo.ped --name pro1 -o /mnt/my_share/dchao/Aqua/AquaGWAS-GUI_Release/output/ --LDplot yes --analysis no --maf 0.05 --mind 0.20 --geno 0.05</value>
     <value type="bool" key="RunConfiguration.Arguments.multi">false</value>
     <value type="QString" key="RunConfiguration.OverrideDebuggerStartup"></value>
     <value type="bool" key="RunConfiguration.UseCppDebugger">false</value>

@@ -42,15 +42,15 @@ public:
     bool callEmmaxGwas(QHash<QString, QString> args);
     QHash<QString, QString> getArgsFromCmd();
     bool isVcfFile(QString file);
-    void on_ldRunPushButton_clicked(QHash<QString, QString> argHash);
+    void runLD(QHash<QString, QString> argHash);
     void runPopLDdecaySingle(QHash<QString, QString> argHash);
     void runPopLDdecaybyFamily(QHash<QString, QString> argHash);
-    void on_ldPlotPushButton_clicked(QHash<QString, QString> args,QString ldResultFile);
+    void ldPlot(QHash<QString, QString> args,QString ldResultFile);
     bool checkoutExistence(QString filePath);
 
 
     //LINRENHAO
-    void on_drawManPushButton_clicked(QHash<QString, QString> args, QString gwasResulFile);
+    void drawManhattan(QHash<QString, QString> args, QString gwasResulFile);
     QStringList makeQQManInputFile(QString pvalueFile);
     bool drawManhattan(QHash<QString, QString> args, QStringList data, QStringList out);
     bool drawQQplot(QStringList data, QStringList out);
@@ -59,7 +59,7 @@ public:
     //annotation part
     //zz
     bool structuralAnnotation(QHash<QString, QString> args);
-    bool on_annoStepPushButton_clicked(QHash<QString, QString> args);
+    bool annoStep(QHash<QString, QString> args);
     bool functionalAnnotation(QHash<QString, QString> args);
 
 private:

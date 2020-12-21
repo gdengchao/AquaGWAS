@@ -65,7 +65,7 @@
      <enum>QTabWidget::Rounded</enum>
     </property>
     <property name="currentIndex">
-     <number>3</number>
+     <number>2</number>
     </property>
     <property name="iconSize">
      <size>
@@ -1706,9 +1706,9 @@ background-color: rgb(0, 0, 0);</string>
       <property name="geometry">
        <rect>
         <x>30</x>
-        <y>70</y>
+        <y>50</y>
         <width>461</width>
-        <height>51</height>
+        <height>71</height>
        </rect>
       </property>
       <property name="frameShape">
@@ -1830,6 +1830,19 @@ border-radius:5px;//这个是改变成圆角边框;
          </widget>
         </item>
        </layout>
+      </widget>
+      <widget class="QLabel" name="fidWarnLabel">
+       <property name="geometry">
+        <rect>
+         <x>10</x>
+         <y>50</y>
+         <width>231</width>
+         <height>16</height>
+        </rect>
+       </property>
+       <property name="text">
+        <string>This option will modify original file !</string>
+       </property>
       </widget>
      </widget>
      <zorder>frame_4</zorder>

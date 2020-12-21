@@ -7,7 +7,6 @@
 #include <QStringList>
 #include <QProcess>
 #include <QFile>
-//#include "useros.h"
 #include "assoctool.h"
 
 class Plink : public AssocTool
@@ -43,12 +42,15 @@ public:
     void filterPlinkFile(QString genotype, QString map, QString maf, QString mind, QString geno, QString out);
     void filterTransposeFile(QString genotype, QString map, QString maf, QString mind, QString geno, QString out);
     void filterData(QString genotype, QString map, QString maf, QString mind, QString geno, QString out);
+    void linkageFilter(QString genotype, QString map,
+                       QString winSize, QString stepLen, QString r2Threshold, QString out);
+    void extractBySnpNameFile(QString genotype, QString map, QString snpIDFile, QString out);
 
     // Split genotype(and map) file, all of them generate map/ped file.
-    void splitVcfFile(QString vcfFile, QString keepFile, QString out);
-    void splitPlinkFile(QString ped, QString map, QString keepFile, QString out);
-    void splitBinaryFile(QString binaryFile, QString keepFile, QString out);
-    void splitTransposeFile(QString tped, QString tfam, QString keepFile, QString out);
+    void splitVcfFile(QString vcfFile, QString keepFile, QString out, QString maf, QString mind, QString geno);
+    void splitPlinkFile(QString ped, QString map, QString keepFile, QString out, QString maf, QString mind, QString geno);
+    void splitBinaryFile(QString binaryFile, QString keepFile, QString out, QString maf, QString mind, QString geno);
+    void splitTransposeFile(QString tped, QString tfam, QString keepFile, QString out, QString maf, QString mind, QString geno);
 
     // Run
     bool runGWAS(QString phenotype, QString genotype, QString map, QString covariate, QString kinship,

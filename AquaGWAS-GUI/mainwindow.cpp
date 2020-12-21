@@ -29,6 +29,7 @@ MainWindow::MainWindow(QWidget *parent)
     // FID complete controler
     ui->fidFileLineEdit->setEnabled(false);
     ui->fidFileFileBrowButton->setEnabled(false);
+    ui->fidWarnLabel->setHidden(true);
 
     // Initiate variables.
     fileReader = new FileReader;
@@ -287,11 +288,10 @@ void MainWindow::pca_ld_cmdButton_clicked()
     //    ui->pcaRunPushButton->setEnabled(false);
     qApp->processEvents();
 
-    QString genotype = this->fileReader->getGenotypeFile();
-
-    QString map = this->fileReader->getMapFile();
-    QString out = this->workDirectory->getOutputDirectory();
-    QString name = this->workDirectory->getProjectName();
+    QString genotype = this->fileReader->getGenotypeFile().replace(' ', "\\ ");;
+    QString map = this->fileReader->getMapFile().replace(' ', "\\ ");;
+    QString out = this->workDirectory->getOutputDirectory().replace(' ', "\\ ");;
+    QString name = this->workDirectory->getProjectName().replace(' ', "\\ ");;
     QString PCs =QString(ui->nPCsLineEdit->text());
     QString Threads= QString(ui->nThreadsLineEdit->text());
     QString maf = ui->mafRadioButton->isChecked()? ui->mafDoubleSpinBox->text():nullptr;
@@ -323,12 +323,12 @@ void MainWindow::pca_ld_cmdButton_clicked()
     if (!mind.isNull())
     {
         PCAcmdlist.append(" --mind " + mind);
-        LDcmdlist.append(" --maf " + maf);
+        LDcmdlist.append(" --mind " + mind);
     }
     if (!geno.isNull())
     {
         PCAcmdlist.append(" --geno " + geno);
-        LDcmdlist.append(" --maf " + maf);
+        LDcmdlist.append(" --geno " + geno);
     }
 
     emit runningMsgWidgetClearText();
@@ -359,15 +359,15 @@ void MainWindow::annotationCmdButton_clicked()
     }
     QString cmdlist;
 
-    QString name = workDirectory->getProjectName();
-    QString out = workDirectory->getOutputDirectory();
-    QString vcfFile = this->fileReader->getGenotypeFile();
-    QString pvalFile = ui->annoPvalLineEdit->text();    // p-value file(the first column is SNP_ID and the last column is p-value)
-    QString avinputFilePath = ui->avinFileLineEdit->text();//先读文件,若要step则后面会覆盖
-    QString refGeneFilePath = ui->refGeneFileLineEdit->text();
-    QString refSeqFilePath = ui->refSeqFileLineEdit->text();
-    QString snpPosFilePath = ui->snpPosFileLineEdit->text();//先读文件,若要step则后面会覆盖
-    QString funcAnnoRefFilePath = ui->funcAnnoRefFileLineEdit->text();
+    QString name = workDirectory->getProjectName().replace(' ', "\\ ");;
+    QString out = workDirectory->getOutputDirectory().replace(' ', "\\ ");;
+    QString vcfFile = this->fileReader->getGenotypeFile().replace(' ', "\\ ");;
+    QString pvalFile = ui->annoPvalLineEdit->text().replace(' ', "\\ ");;    // p-value file(the first column is SNP_ID and the last column is p-value)
+    QString avinputFilePath = ui->avinFileLineEdit->text().replace(' ', "\\ ");;//先读文件,若要step则后面会覆盖
+    QString refGeneFilePath = ui->refGeneFileLineEdit->text().replace(' ', "\\ ");;
+    QString refSeqFilePath = ui->refSeqFileLineEdit->text().replace(' ', "\\ ");;
+    QString snpPosFilePath = ui->snpPosFileLineEdit->text().replace(' ', "\\ ");;//先读文件,若要step则后面会覆盖
+    QString funcAnnoRefFilePath = ui->funcAnnoRefFileLineEdit->text().replace(' ', "\\ ");;
 
     //step cmd
     if(checkoutExistence(pvalFile)&&checkoutExistence(vcfFile))//两个文件都有输入说明要做step
@@ -2437,7 +2437,6 @@ void MainWindow::on_pcaRunPushButton_clicked()
                 emit runningMsgWidgetAppendText("Complete FID OK.\n");
             }
 
-
             // Mkae GRM
             Gcta gcta;
             if (gcta.makeGRM(binaryFile, binaryFile))
@@ -2643,7 +2642,7 @@ void MainWindow::runPopLDdecaybyFamily(void)
                 throw -1;
             }
         }
-        if (isVcfFile(genotype)) // Transform "vcf" to "transpose"
+        if (isVcfFile(genotype)) // Transform "vcf" to "plink"
         {
             if(!plink.vcf2plink(genotype, plinkFile, maf, mind, geno))
             {
@@ -2652,7 +2651,7 @@ void MainWindow::runPopLDdecaybyFamily(void)
 
             transformFileFlag = true;
         }
-        if (genotype.split(".")[genotype.split(".").length()-1] == "bed")  // Transform "plink" to "binary"
+        if (genotype.split(".")[genotype.split(".").length()-1] == "bed")  // Transform "plink" to "plink"
         {
             if (!plink.binary2plink(genoFileAbPath+"/"+genoFileBaseName, plinkFile, maf, mind, geno))
             {
@@ -2662,7 +2661,7 @@ void MainWindow::runPopLDdecaybyFamily(void)
             transformFileFlag = true;
         }
 
-        if (genotype.split(".")[genotype.split(".").length()-1] == "tped")  // Transform "transpose" to "binary"
+        if (genotype.split(".")[genotype.split(".").length()-1] == "tped")  // Transform "transpose" to "plink"
         {
             if (map.isNull())
             {
@@ -2692,20 +2691,22 @@ void MainWindow::runPopLDdecaybyFamily(void)
             {
                 return;
             }
+            genoFileName = plinkFile+"_tmp";
         }
         else
         {
             plinkFile = genoFileAbPath + "/" + genoFileBaseName;
         }
 
-        if (isVcfFile(genotype)){} // Transform "vcf" to "transpose"
+        genoFileSuffix = "ped"; // File format have been transposed.
+//        if (isVcfFile(genotype)){} // Transform "vcf" to "transpose"
 
         // Make .keep file.
         emit runningMsgWidgetAppendText(QDateTime::currentDateTime().toString() +
                                         "\nMake .keep file, \n");
         QThread::msleep(10);
-        if (genoFileSuffix == "ped")
-        {
+//        if (genoFileSuffix == "ped")
+//        {
             if (fidCompleteFlag)
             {
                 emit runningMsgWidgetAppendText("Complete FID, \n");
@@ -2716,38 +2717,38 @@ void MainWindow::runPopLDdecaybyFamily(void)
                 }
                 emit runningMsgWidgetAppendText("Complete FID OK \n");
             }
-            keepFileList = popLDdecay.makeKeepFile(genotype);
-        }
-        if (genoFileSuffix == "tped")
-        {
-            map = map.isNull() ? genoFileAbPath+"/"+genoFileBaseName+".tfam" : map;
-            if (fidCompleteFlag)
-            {
-                emit runningMsgWidgetAppendText("Complete FID, \n");
-                if (!fileReader->completeFIDofTfam(fidFile, map))
-                {
-                    emit runningMsgWidgetAppendText("Complete FID ERROR!\n");
-                    throw -1;
-                }
-                emit runningMsgWidgetAppendText("Complete FID OK.\n");
-            }
-            keepFileList = popLDdecay.makeKeepFile(map);
-        }
-        if (genoFileSuffix == "bed")
-        {
-            map = map.isNull() ? genoFileAbPath+"/"+genoFileBaseName+".fam" : map;
-            if (fidCompleteFlag)
-            {
-                emit runningMsgWidgetAppendText("Complete FID, \n");
-                if (!fileReader->completeFIDofTfam(fidFile, map))
-                {
-                    emit runningMsgWidgetAppendText("Complete FID ERROR!\n");
-                    throw -1;
-                }
-                emit runningMsgWidgetAppendText("Complete FID OK.\n");
-            }
-            keepFileList = popLDdecay.makeKeepFile(map);
-        }
+            keepFileList = popLDdecay.makeKeepFile(plinkFile+".ped");
+//        }
+//        if (genoFileSuffix == "tped")
+//        {
+//            map = map.isNull() ? genoFileAbPath+"/"+genoFileBaseName+".tfam" : map;
+//            if (fidCompleteFlag)
+//            {
+//                emit runningMsgWidgetAppendText("Complete FID, \n");
+//                if (!fileReader->completeFIDofTfam(fidFile, map))
+//                {
+//                    emit runningMsgWidgetAppendText("Complete FID ERROR!\n");
+//                    throw -1;
+//                }
+//                emit runningMsgWidgetAppendText("Complete FID OK.\n");
+//            }
+//            keepFileList = popLDdecay.makeKeepFile(map);
+//        }
+//        if (genoFileSuffix == "bed")
+//        {
+//            map = map.isNull() ? genoFileAbPath+"/"+genoFileBaseName+".fam" : map;
+//            if (fidCompleteFlag)
+//            {
+//                emit runningMsgWidgetAppendText("Complete FID, \n");
+//                if (!fileReader->completeFIDofTfam(fidFile, map))
+//                {
+//                    emit runningMsgWidgetAppendText("Complete FID ERROR!\n");
+//                    throw -1;
+//                }
+//                emit runningMsgWidgetAppendText("Complete FID OK.\n");
+//            }
+//            keepFileList = popLDdecay.makeKeepFile(map);
+//        }
 
         emit runningMsgWidgetAppendText(QDateTime::currentDateTime().toString() +
                                         "\n.keep file OK.\n");
@@ -3813,6 +3814,7 @@ void MainWindow::on_compleFIDMafRadioButton_clicked()
 {
     ui->fidFileLineEdit->setEnabled(ui->compleFIDMafRadioButton->isChecked());
     ui->fidFileFileBrowButton->setEnabled(ui->compleFIDMafRadioButton->isChecked());
+    ui->fidWarnLabel->setHidden(!ui->compleFIDMafRadioButton->isChecked());
 }
 
 void MainWindow::on_fidFileFileBrowButton_clicked()

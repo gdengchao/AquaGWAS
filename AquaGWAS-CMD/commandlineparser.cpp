@@ -340,32 +340,6 @@ QHash<QString, QString> CommandLineParser::getArgsFromCmd()
             argHash["kinFile"] = this->value(*kinFileCmdOp);
         }
 
-        if (this->isSet(*genoCmdOp) && this->value(*genoCmdOp).isNull())
-        {
-            throw invalid_argument("Invalid argument -- geno");
-        }
-        else if (this->isSet(*genoCmdOp) && !this->value(*genoCmdOp).isNull())
-        {
-            argHash["geno"] = this->value(*genoCmdOp);
-        }
-
-        if (this->isSet(*mindCmdOp) && this->value(*mindCmdOp).isNull())
-        {
-            throw invalid_argument("Invalid argument -- mind");
-        }
-        else if (this->isSet(*mindCmdOp) && !this->value(*mindCmdOp).isNull())
-        {
-            argHash["mind"] = this->value(*mindCmdOp);
-        }
-
-        if (this->isSet(*mafCmdOp) && this->value(*mafCmdOp).isNull())
-        {
-            throw invalid_argument("Invalid argument -- maf");
-        }
-        else if (this->isSet(*mafCmdOp) && !this->value(*mafCmdOp).isNull())
-        {
-            argHash["maf"] = this->value(*mafCmdOp);
-        }
 
         // Gemma specific arguments.
         if (argHash["tool"] == "gemma")
@@ -494,6 +468,33 @@ QHash<QString, QString> CommandLineParser::getArgsFromCmd()
         {
             argHash["LD_plot"] = this->value(*LD_plot);
         }
+
+        if (this->isSet(*genoCmdOp) && this->value(*genoCmdOp).isNull())
+        {
+            throw invalid_argument("Invalid argument -- geno");
+        }
+        else if (this->isSet(*genoCmdOp) && !this->value(*genoCmdOp).isNull())
+        {
+            argHash["geno"] = this->value(*genoCmdOp);
+        }
+
+        if (this->isSet(*mindCmdOp) && this->value(*mindCmdOp).isNull())
+        {
+            throw invalid_argument("Invalid argument -- mind");
+        }
+        else if (this->isSet(*mindCmdOp) && !this->value(*mindCmdOp).isNull())
+        {
+            argHash["mind"] = this->value(*mindCmdOp);
+        }
+
+        if (this->isSet(*mafCmdOp) && this->value(*mafCmdOp).isNull())
+        {
+            throw invalid_argument("Invalid argument -- maf");
+        }
+        else if (this->isSet(*mafCmdOp) && !this->value(*mafCmdOp).isNull())
+        {
+            argHash["maf"] = this->value(*mafCmdOp);
+        }
     }
     if (this->isSet(*pcaCmdOp))
       {
@@ -574,7 +575,7 @@ QHash<QString, QString> CommandLineParser::getArgsFromCmd()
          }
          else if (this->isSet(*mindCmdOp) && !this->value(*mindCmdOp).isNull())
          {
-             argHash["geno"] = this->value(*mindCmdOp);
+             argHash["mind"] = this->value(*mindCmdOp);
          }
 
          if (this->isSet(*mafCmdOp) && this->value(*mafCmdOp).isNull())
@@ -761,11 +762,11 @@ void CommandLineParser::parseCommand()
     }
     if (argHash.find("LD_CmdOp") != argHash.end())
     {
-        on_ldRunPushButton_clicked(argHash);//虽然命令行没有点击,但这里命名跟界面里的函数统一
+        runLD(argHash);//虽然命令行没有点击,但这里命名跟界面里的函数统一
     }
     if (argHash.find("stepAnno") != argHash.end())
        {
-           on_annoStepPushButton_clicked(argHash);
+           annoStep(argHash);
        }
 
     if (argHash.find("strucAnno") != argHash.end())
@@ -810,10 +811,6 @@ bool CommandLineParser::callGctaPca(QHash<QString, QString> args)
         return false;
     }
 
-    qApp->processEvents();
-
-
-
     try {
         QString phenotype = args["phenoFile"];
         QFileInfo genoFileInfo(genotype);
@@ -828,12 +825,12 @@ bool CommandLineParser::callGctaPca(QHash<QString, QString> args)
         QString binaryFile = genoFileAbPath+"/"+genoFileBaseName+"_tmp";
 
         bool transformFileFlag = false;
-
+        bool filterDataFlag = false;
 
         Plink plink;
-        if (isVcfFile(genotype)) // Transform "vcf" to "transpose"
+        if (isVcfFile(genotype)) // Transform "vcf" to "binary"
         {
-            if(!plink.vcf2binary(genotype, binaryFile, nullptr, nullptr, nullptr))
+            if(!plink.vcf2binary(genotype, binaryFile, maf, mind, geno))
             {
                 throw runtime_error("vcf to transpose file error");
             }
@@ -847,7 +844,7 @@ bool CommandLineParser::callGctaPca(QHash<QString, QString> args)
             {
                 map = genoFileAbPath+"/"+genoFileBaseName+".map";
             }
-            if (!plink.plink2binary(genotype, map, binaryFile, nullptr, nullptr, nullptr))
+            if (!plink.plink2binary(genotype, map, binaryFile, maf, mind, geno))
             {
                 throw runtime_error("plink to binary file error");
             }
@@ -861,16 +858,22 @@ bool CommandLineParser::callGctaPca(QHash<QString, QString> args)
             {
                 map = genoFileAbPath+"/"+genoFileBaseName+".tfam";
             }
-            if (!plink.transpose2binary(genotype, map, binaryFile, nullptr, nullptr, nullptr))
+            if (!plink.transpose2binary(genotype, map, binaryFile, maf, mind, geno))
             {
                 throw runtime_error("transpose to binary file error");
             }
             transformFileFlag = true;
         }
 
-        if (transformFileFlag)
-        {   // Run plink to transform file or filter data.
+        if ((!maf.isNull() || !mind.isNull() || !geno.isNull()) &&
+                genotype.split(".")[genotype.split(".").length()-1] == "bed")
+        {   // When don't set any QC param, it won't execute.
+            plink.filterBinaryFile(genoFileAbPath+"/"+genoFileBaseName, maf, mind, geno, binaryFile);
+            filterDataFlag = true;
+        }
 
+        if (transformFileFlag || filterDataFlag)
+        {   // Run plink to transform file or filter data.
             int exitCode = this->proc->execute(this->toolpath+"plink", plink.getParamList());
             if (exitCode == -2)
             {
@@ -964,19 +967,10 @@ bool CommandLineParser::plotPca(QHash<QString, QString> args)
     QString genoFileAbPath = genoFileInfo.absolutePath();
     QString genoFileBaseName = genoFileInfo.baseName();
 
-    //QString path = out;
-
-    //QString outFile = this->workDirectory->getOutputDirectory() + "/" +
-                      //this->workDirectory->getProjectName() + "_pca.png";
-
     QString eigenvalFile = out + "/"+ genoFileBaseName+".eigenval";
     QString eigenvecFile = out + "/"+ genoFileBaseName+".eigenvec";
-    //QString eigenvalFile = "/home/yingwang/yzz/test/out/hapmap1.eigenval";
-    //QString eigenvecFile = "/home/yingwang/yzz/test/out/hapmap1.eigenvec";
 
     QString outFile = out + "/"+ProjectName+"_pca.png";
-
-    //QString outFile = "/home/yingwang/yzz/test/out/_pca.png";
 
     if (eigenvalFile.isEmpty() ||
         eigenvecFile.isEmpty() ||
@@ -986,55 +980,30 @@ bool CommandLineParser::plotPca(QHash<QString, QString> args)
         return false;
     }
     runningFlag = true;
-    //ui->pcaPlotPushButton->setEnabled(false);
-    qApp->processEvents();
-   // QFuture<void> fu = QtConcurrent::run([&]()
-   // {
-
-      //  emit runningMsgWidgetAppendText(QDateTime::currentDateTime().toString() +
-       //                                 "\nPlot PCA, \n");
-        //QThread::msleep(10);
-        QStringList param;
-        // The sequence of param is not changeable
-        param.clear();
-        param.append(this->scriptpath+"pca/pca_plot.R");    // Can choose pca_plot.R or pca_ggplot.R
-        param.append(eigenvalFile);
-        param.append(eigenvecFile);
-        param.append(outFile);
+    QStringList param;
+    // The sequence of param is not changeable
+    param.clear();
+    param.append(this->scriptpath+"pca/pca_plot.R");    // Can choose pca_plot.R or pca_ggplot.R
+    param.append(eigenvalFile);
+    param.append(eigenvecFile);
+    param.append(outFile);
 
         // R in environment path is necessary.
-        proc->start("Rscript", param);
-        if(!proc->waitForStarted())
-        {
-            delete proc;
-            proc=nullptr;
-            return false;
-
-        }
-        proc->waitForFinished(-1);
-       // emit runningMsgWidgetAppendText(QDateTime::currentDateTime().toString() +
-        //                                "\nOK,\n" + outFile + "\n");
-        //QThread::msleep(10);
-        // Show plot
-       // if (runningFlag && checkoutExistence(outFile))
-       // {
-          //  emit setGraphViewerGraphSig(QStringList() << outFile);
-          //  QThread::msleep(10);
-       // }
-   // });
-    //while (!fu.isFinished())
-   // {
-   //     qApp->processEvents(QEventLoop::AllEvents, 200);
-   // }
-
-    //ui->pcaPlotPushButton->setEnabled(true);
-    qApp->processEvents();
+    proc->start("Rscript", param);
+    if(!proc->waitForStarted())
+    {
+        delete proc;
+        proc=nullptr;
+        return false;
+    }
+    proc->waitForFinished(-1);
     runningFlag = false;
+    return true;
 }
 
 
-void CommandLineParser::on_ldRunPushButton_clicked(QHash<QString, QString> argHash)
-{//GUI界面代码 这个函数里有判断是否输入了基因型文件,但这个功能在cmd代码里的getArgsFromcmd函数里就有,所以这里不再判断
+void CommandLineParser::runLD(QHash<QString, QString> argHash)
+{//这个函数里有判断是否输入了基因型文件,但这个功能在cmd代码里的getArgsFromcmd函数里就有,所以这里不再判断
     if(argHash["analysisCmdOp"]=="yes"||argHash["analysisCmdOp"]=="YES")
     {
         //执行family
@@ -1057,15 +1026,18 @@ void CommandLineParser::runPopLDdecaySingle(QHash<QString, QString> args)
     QString map = args["mapFile"];
     QString out = args["out"];
     QString name = args["ProjectName"];
+    QString maf = args["maf"];
+    QString mind = args["mind"];
+    QString geno = args["geno"];
     //  binaryFile: Set a default path. Binary geno file with path without suffix.
     QString plinkFile = genoFileAbPath+"/"+genoFileBaseName+"_tmp";
     bool transformFileFlag = false;
-
+    bool filterDataFlag = false;
     // Need binary files.  Every temp file and a "_tmp" after baseName, and will be deleted after gwas.
     Plink plink;//判断输入的基因文件的格式，都转化成plink格式
     if (isVcfFile(genotype)) // Transform "vcf" to "plink"
     {
-        if(!plink.vcf2plink(genotype, plinkFile, nullptr, nullptr, nullptr))
+        if(!plink.vcf2plink(genotype, plinkFile, maf, mind, geno))
         {
             throw -1;
         }
@@ -1074,7 +1046,7 @@ void CommandLineParser::runPopLDdecaySingle(QHash<QString, QString> args)
     }
     if (genotype.split(".")[genotype.split(".").length()-1] == "bed")  //Transform "binary" to "plink"
     {
-        if (!plink.binary2plink(genoFileAbPath+"/"+genoFileBaseName, plinkFile, nullptr, nullptr, nullptr))
+        if (!plink.binary2plink(genoFileAbPath+"/"+genoFileBaseName, plinkFile, maf, mind, geno))
         {
             throw -1;
         }
@@ -1088,25 +1060,37 @@ void CommandLineParser::runPopLDdecaySingle(QHash<QString, QString> args)
         {
             map = genoFileAbPath+"/"+genoFileBaseName+".tfam";
         }
-        if (!plink.transpose2plink(genotype, map, plinkFile, nullptr, nullptr, nullptr))
+        if (!plink.transpose2plink(genotype, map, plinkFile, maf, mind, geno))
         {
             throw -1;
         }
         transformFileFlag = true;
     }
-    if (transformFileFlag)//真正调用工具来转化格式
+    if ((!maf.isNull() || !mind.isNull() || !geno.isNull()) &&
+            genotype.split(".")[genotype.split(".").length()-1] == "ped")
+    {
+        if (map.isNull())
+        {
+            map = genoFileAbPath+"/"+genoFileBaseName+".map";
+        }
+        plink.filterData(genotype, map, maf, mind, geno, plinkFile);
+        filterDataFlag = true;
+    }
+
+    if (transformFileFlag || filterDataFlag)
     {   // Run plink to transform file or filter data.
-        int exitCode = this->proc->execute(this->toolpath+"plink", plink.getParamList());//这步就是最终调用plink工具
-        if (exitCode == -2)                                                              //由toolpath来告知系统plink工具在哪
-        {                                                                                //由getparamlist来提供plink命令后面一大串的命令参数
-            throw runtime_error("process cannot be started when transformfile(LD single)");                       //用execute执行进程后，若有错误会返回错误代码-1或-2
+        int exitCode = this->proc->execute(this->toolpath+"plink", plink.getParamList());
+        if (exitCode == -2)
+        {
+            throw runtime_error("process cannot be started");
         }
         if (exitCode == -1)
         {
-            throw runtime_error("process crashes when transformfile(LD single)");
+            throw runtime_error("process crashes");
         }
+        this->proc->close();
     }
-    else //说明输入就是plink格式文件不需要转化
+    else
     {
         plinkFile = genoFileAbPath + "/" + genoFileBaseName;
     }
@@ -1174,7 +1158,7 @@ void CommandLineParser::runPopLDdecaySingle(QHash<QString, QString> args)
     file.remove(plinkFile+".genotype");
     if(LD_plot=="yes")
     {
-        on_ldPlotPushButton_clicked(args, out+"/"+name+".stat.gz");
+        ldPlot(args, out+"/"+name+".stat.gz");
     }
     this->proc->close();
 
@@ -1186,6 +1170,9 @@ void CommandLineParser::runPopLDdecaybyFamily(QHash<QString, QString> args)
     QString name = args["ProjectName"];
     QString genotype =args["genoFile"];
     QString map = args["mapFile"];
+    QString maf = args["maf"];
+    QString mind = args["mind"];
+    QString geno = args["geno"];
     QFileInfo genoFileInfo(genotype);
     QString genoFileSuffix = genoFileInfo.suffix();
     QString genoFileBaseName = genoFileInfo.baseName();
@@ -1193,23 +1180,88 @@ void CommandLineParser::runPopLDdecaybyFamily(QHash<QString, QString> args)
     QStringList keepFileList;
     Plink plink;
     PopLDdecay popLDdecay;
-    if (isVcfFile(genotype)){} // ???界面这里学长没写完
+
+    QString plinkFile = genoFileAbPath+"/"+genoFileBaseName+"_tmp";
+    bool transformFileFlag = false;
+    bool filterDataFlag = false;
+
+    if (isVcfFile(genotype)) // Transform "vcf" to "plink"
+    {
+        if(!plink.vcf2plink(genotype, plinkFile, maf, mind, geno))
+        {
+            throw -1;
+        }
+
+        transformFileFlag = true;
+    }
+    if (genotype.split(".")[genotype.split(".").length()-1] == "bed")  // Transform "plink" to "plink"
+    {
+        if (!plink.binary2plink(genoFileAbPath+"/"+genoFileBaseName, plinkFile, maf, mind, geno))
+        {
+            throw -1;
+        }
+
+        transformFileFlag = true;
+    }
+
+    if (genotype.split(".")[genotype.split(".").length()-1] == "tped")  // Transform "transpose" to "plink"
+    {
+        if (map.isNull())
+        {
+            map = genoFileAbPath+"/"+genoFileBaseName+".tfam";
+        }
+        if (!plink.transpose2plink(genotype, map, plinkFile, maf, mind, geno))
+        {
+            throw -1;
+        }
+        transformFileFlag = true;
+    }
+
+    if ((!maf.isNull() || !mind.isNull() || !geno.isNull()) &&
+            genotype.split(".")[genotype.split(".").length()-1] == "ped")
+    {
+        if (map.isNull())
+        {
+            map = genoFileAbPath+"/"+genoFileBaseName+".map";
+        }
+        plink.filterData(genotype, map, maf, mind, geno, plinkFile);
+        filterDataFlag = true;
+    }
+
+    if (transformFileFlag || filterDataFlag)
+    {   // Run plink to transform file or filter data.
+        int exitCode = this->proc->execute(this->toolpath+"plink", plink.getParamList());
+        if (exitCode == -2)
+        {
+            throw runtime_error("process cannot be started");
+        }
+        if (exitCode == -1)
+        {
+            throw runtime_error("process crashes");
+        }
+        this->proc->close();
+    }
+    else
+    {
+        plinkFile = genoFileAbPath + "/" + genoFileBaseName;
+    }
+    genoFileSuffix = "ped";
     // Make .keep file.
     qDebug() << QDateTime::currentDateTime().toString() << "\nMake .keep file, \n" ;
-    if (genoFileSuffix == "ped")
-    {
+//    if (genoFileSuffix == "ped")
+//    {
         keepFileList = popLDdecay.makeKeepFile(genotype);
-    }
-    if (genoFileSuffix == "tped")
-    {
-        map = map.isNull() ? genoFileAbPath+"/"+genoFileBaseName+".tfam" : map;
-        keepFileList = popLDdecay.makeKeepFile(map);
-    }
-    if (genoFileSuffix == "bed")
-    {
-        map = map.isNull() ? genoFileAbPath+"/"+genoFileBaseName+".fam" : map;
-        keepFileList = popLDdecay.makeKeepFile(map);
-    }
+//    }
+//    if (genoFileSuffix == "tped")
+//    {
+//        map = map.isNull() ? genoFileAbPath+"/"+genoFileBaseName+".tfam" : map;
+//        keepFileList = popLDdecay.makeKeepFile(map);
+//    }
+//    if (genoFileSuffix == "bed")
+//    {
+//        map = map.isNull() ? genoFileAbPath+"/"+genoFileBaseName+".fam" : map;
+//        keepFileList = popLDdecay.makeKeepFile(map);
+//    }
      qDebug() << QDateTime::currentDateTime().toString() << "\n.keep file OK.\n" ;
      bool isLD_OK = true;
      for (QString keepFile:keepFileList)
@@ -1226,17 +1278,18 @@ void CommandLineParser::runPopLDdecaybyFamily(QHash<QString, QString> args)
          {
              map = map.isNull() ? genoFileAbPath+"/"+genoFileBaseName+".map" : map;
              plink.splitPlinkFile(genotype, map, keepFile,
-                     genoFileAbPath+"/"+keepFileBaseName);
+                     genoFileAbPath+"/"+keepFileBaseName, maf, mind, geno);
          }
          if (genoFileSuffix == "tped")
          {
              map = map.isNull() ? genoFileAbPath+"/"+genoFileBaseName+".tfam" : map;
              plink.splitTransposeFile(genotype, map, keepFile,
-                     genoFileAbPath+"/"+keepFileBaseName);
+                     genoFileAbPath+"/"+keepFileBaseName, maf, mind, geno);
          }
          if (genoFileSuffix == "bed")
          {
-             plink.splitBinaryFile(genoFileAbPath+"/"+genoFileBaseName, keepFile, genoFileAbPath+"/"+keepFileBaseName);
+             plink.splitBinaryFile(genoFileAbPath+"/"+genoFileBaseName, keepFile,
+                                   genoFileAbPath+"/"+keepFileBaseName, maf, mind, geno);
          }
 
          int exitCode = this->proc->execute(this->toolpath+"plink", plink.getParamList());
@@ -1328,12 +1381,12 @@ void CommandLineParser::runPopLDdecaybyFamily(QHash<QString, QString> args)
 
          if(LD_plot=="yes")
          {                                  //其实这一大串keepFileBaseName.split("_")[keepFileBaseName.split("_").length()-1 代表一个数字
-             on_ldPlotPushButton_clicked(args,  out+"/"+name+"_"+keepFileBaseName.split("_")[keepFileBaseName.split("_").length()-1]+".stat.gz");
+             ldPlot(args,  out+"/"+name+"_"+keepFileBaseName.split("_")[keepFileBaseName.split("_").length()-1]+".stat.gz");
          }
      }
 
 }
-void CommandLineParser::on_ldPlotPushButton_clicked(QHash<QString, QString> args,QString ldResultFile)
+void CommandLineParser::ldPlot(QHash<QString, QString> args,QString ldResultFile)
 {
     QString out = args["out"];
     QString name = args["ProjectName"];
@@ -1459,7 +1512,7 @@ bool CommandLineParser::callPlinkGwas(QHash<QString, QString> args)
     //至于logistic模型的结果，因为界面没跑成功过，不知道它结果的后缀是咋样的，还没搞
     QString resultfile = out+"/"+ProjectName+"_"+pheFileBaseName+".assoc."+model.toLower() ;
 
-    on_drawManPushButton_clicked(args, resultfile);
+    drawManhattan(args, resultfile);
 
 
 
@@ -1712,7 +1765,7 @@ bool CommandLineParser::callGemmaGwas(QHash<QString, QString> args)
             //gemma分析后的结果文件
             QString resultfile = out+"/output"+(i==0?"":QString::number(i))+ "/"+ProjectName+"_"+pheFileBaseName+".assoc.txt";
 
-            on_drawManPushButton_clicked(args, resultfile);
+            drawManhattan(args, resultfile);
 
         }
 
@@ -1903,13 +1956,13 @@ bool CommandLineParser::callEmmaxGwas(QHash<QString, QString> args)
     //要找到emmax的输出目录
     QString newdir = out+"/"+ProjectName+"_"+pheFileBaseName;
     QString resultfile = newdir +".ps" ;
-    on_drawManPushButton_clicked(args,resultfile);
+    drawManhattan(args,resultfile);
     return true;
 }
 
 
 //linrenhao new
-void CommandLineParser::on_drawManPushButton_clicked(QHash<QString, QString> args, QString gwasResulFile)
+void CommandLineParser::drawManhattan(QHash<QString, QString> args, QString gwasResulFile)
 {
 
     try {
@@ -2428,13 +2481,12 @@ bool CommandLineParser::functionalAnnotation(QHash<QString, QString> args)
         return false;
     }
 
-    qApp->processEvents();
-
+    return true;
 }
-bool CommandLineParser::on_annoStepPushButton_clicked(QHash<QString, QString> args)
+bool CommandLineParser::annoStep(QHash<QString, QString> args)
 {
 
-        qApp->processEvents();
+//        qApp->processEvents();
 
         //从哈希表中取出各个命令的参数值
         QString phenotype = args["phenoFile"];
@@ -2520,7 +2572,7 @@ bool CommandLineParser::on_annoStepPushButton_clicked(QHash<QString, QString> ar
             return false;
         }
 
-        qApp->processEvents();
+//        qApp->processEvents();
         return 1;
 }
 bool CommandLineParser::isVcfFile(QString file) // Just consider filename.
