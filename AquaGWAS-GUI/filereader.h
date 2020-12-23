@@ -31,6 +31,7 @@ public:
     bool completeFIDofTfam(QString fidFilePath, QString tfamFilePath);
     bool completeFIDofPed(QString fidFilePath, QString pedFilePath);
     bool isNumber(QString str);
+    bool filterSNPByChrFromMap(QString mapFilePath, QString chrListFilePath, QString snpListFilePath);
 private:
     QString phenotypeFile;
     QString genotypeFile;

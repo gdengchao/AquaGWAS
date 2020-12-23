@@ -28,8 +28,12 @@ MainWindow::MainWindow(QWidget *parent)
 
     // FID complete controler
     ui->fidFileLineEdit->setEnabled(false);
-    ui->fidFileFileBrowButton->setEnabled(false);
+    ui->fidFileBrowButton->setEnabled(false);
     ui->fidWarnLabel->setHidden(true);
+
+    // Chr filter
+    ui->filterChrFileLineEdit->setEnabled(false);
+    ui->filterChrFileBrowButton->setEnabled(false);
 
     // Initiate variables.
     fileReader = new FileReader;
@@ -2290,7 +2294,7 @@ void MainWindow::on_pcaRunPushButton_clicked()
     ui->pcaRunPushButton->setEnabled(false);
     qApp->processEvents();
 
-    bool completeFidFlag = ui->compleFIDMafRadioButton->isChecked();
+    bool completeFidFlag = ui->compleFIDRadioButton->isChecked();
     QString fidFile = ui->fidFileLineEdit->text();
 
     try {
@@ -2593,8 +2597,11 @@ void MainWindow::runPopLDdecaybyFamily(void)
         bool transformFileFlag = false;
         bool filterDataFlag = false;
 
-        bool fidCompleteFlag = ui->compleFIDMafRadioButton->isChecked();
+        bool fidCompleteFlag = ui->compleFIDRadioButton->isChecked();
         QString fidFile = ui->fidFileLineEdit->text();
+
+        bool filterChrFlag = ui->filterChrRadioButton->isChecked();
+        QString filterChrListFile = ui->filterChrFileLineEdit->text();
 
         if (qualityControl->isLinkageFilterNeeded())
         {
@@ -2760,6 +2767,7 @@ void MainWindow::runPopLDdecaybyFamily(void)
             QFileInfo keepFileInfo(keepFile);   // WARNING
             QString keepFileBaseName = keepFileInfo.baseName();
             QString keepFileAbPath = keepFileInfo.absolutePath();
+            QString curGenotypeFile = genoFileAbPath+"/"+keepFileBaseName;
 
             emit runningMsgWidgetAppendText(QDateTime::currentDateTime().toString() +
                                             "\nMake "+keepFileBaseName+".ped"+" and "+keepFileBaseName+".map, \n");
@@ -2769,18 +2777,18 @@ void MainWindow::runPopLDdecaybyFamily(void)
             {
                 map = map.isNull() ? genoFileAbPath+"/"+genoFileBaseName+".map" : map;
                 plink.splitPlinkFile(genotype, map, keepFile,
-                                     genoFileAbPath+"/"+keepFileBaseName, maf, mind, geno);
+                                     curGenotypeFile, maf, mind, geno);
             }
             if (genoFileSuffix == "tped")
             {
                 map = map.isNull() ? genoFileAbPath+"/"+genoFileBaseName+".tfam" : map;
                 plink.splitTransposeFile(genotype, map, keepFile,
-                                         genoFileAbPath+"/"+keepFileBaseName, maf, mind, geno);
+                                         curGenotypeFile, maf, mind, geno);
             }
             if (genoFileSuffix == "bed")
             {
                 plink.splitBinaryFile(genoFileAbPath+"/"+genoFileBaseName, keepFile,
-                                      genoFileAbPath+"/"+keepFileBaseName, maf, mind, geno);
+                                      curGenotypeFile, maf, mind, geno);
             }
 
             if (!this->runExTool(this->toolpath+"plink", plink.getParamList()))
@@ -2796,10 +2804,44 @@ void MainWindow::runPopLDdecaybyFamily(void)
             emit runningMsgWidgetAppendText(QDateTime::currentDateTime().toString() +
                                             "\nMake "+keepFileBaseName+".genotype,\n");
             QThread::msleep(10);
-            // Make .genotype file.
-            if (popLDdecay.makeGenotype(genoFileAbPath+"/"+keepFileBaseName+".ped",
-                                        genoFileAbPath+"/"+keepFileBaseName+".map",
-                                        genoFileAbPath+"/"+keepFileBaseName+".genotype"))
+
+            // Reserve SNP in chr list file
+            FileReader fileReader;
+            if (filterChrFlag)
+            {
+                emit runningMsgWidgetAppendText(QDateTime::currentDateTime().toString() +
+                                                + "\n" + "Filter SNP by chr list,\n");
+                QString snplistFile = curGenotypeFile + "_snplist";
+                if (map.isNull())
+                {
+                    map = curGenotypeFile+".map";
+                }
+                // Make keep file list.
+                if (!fileReader.filterSNPByChrFromMap(map, filterChrListFile, snplistFile))
+                {
+                    emit runningMsgWidgetAppendText(QDateTime::currentDateTime().toString() +
+                                                    + "\n" + "Filter SNP by chr list ERROR.\n");
+                    throw -1;
+                }
+                plink.extractBySnpNameFile(curGenotypeFile+".ped", curGenotypeFile+".map", snplistFile, curGenotypeFile+"_fc");
+
+                if (!runExTool(this->toolpath+"plink", plink.getParamList()))
+                {
+                    throw -1;
+                }
+                curGenotypeFile = curGenotypeFile+"_fc";
+
+                QFile file;
+                file.remove(snplistFile);
+
+                emit runningMsgWidgetAppendText(QDateTime::currentDateTime().toString() +
+                                                + "\n" + "Filter SNP by chr list OK.\n");
+            }
+
+            // Make .genotype
+            if (!popLDdecay.makeGenotype(curGenotypeFile+".ped",
+                                         curGenotypeFile+".map",
+                                         curGenotypeFile+".genotype"))
             {
                 if (!this->runExTool(this->scriptpath+"poplddecay/plink2genotype",
                                      popLDdecay.getParamList()))
@@ -2820,14 +2862,14 @@ void MainWindow::runPopLDdecaybyFamily(void)
                 throw -1;
             }
 
-            file.remove(genoFileAbPath+"/"+keepFileBaseName+".ped");
-            file.remove(genoFileAbPath+"/"+keepFileBaseName+".map");
-            file.remove(genoFileAbPath+"/"+keepFileBaseName+".log");
-            file.remove(genoFileAbPath+"/"+keepFileBaseName+".nosex");
+            file.remove(curGenotypeFile+".ped");
+            file.remove(curGenotypeFile+".map");
+            file.remove(curGenotypeFile+".log");
+            file.remove(curGenotypeFile+".nosex");
 
             // Run LD.
             // keepFileName:fileAbPath+"/"+fileBaseName+"_"+fid+".keep"
-            if (popLDdecay.runLD(genoFileAbPath+"/"+keepFileBaseName+".genotype",
+            if (popLDdecay.runLD(curGenotypeFile+".genotype",
                                  out+"/"+name+"_"+keepFileBaseName.split("_")[keepFileBaseName.split("_").length()-1]))
             {
                 emit runningMsgWidgetAppendText(QDateTime::currentDateTime().toString() +
@@ -2860,7 +2902,7 @@ void MainWindow::runPopLDdecaybyFamily(void)
                 isLD_OK = false;
                 throw -1;
             }
-            file.remove(genoFileAbPath+"/"+keepFileBaseName+".genotype");
+            file.remove(curGenotypeFile+".genotype");
         }
 
         if (isLD_OK)
@@ -2895,6 +2937,9 @@ void MainWindow::runPopLDdecaySingle(void)
 
         bool transformFileFlag = false;
         bool filterDataFlag = false;
+
+        bool filterChrFlag = ui->filterChrRadioButton->isChecked();
+        QString filterChrListFile = ui->filterChrFileLineEdit->text();
 
         // Need plink files.  Every temp file and a "_tmp" after baseName, and will be deleted after gwas.
         Plink plink;
@@ -2992,12 +3037,45 @@ void MainWindow::runPopLDdecaySingle(void)
         {   // Run plink to transform file or filter data.
             if (!runExTool(this->toolpath+"plink", plink.getParamList()))
             {
-                return;
+                throw -1;
             }
         }
         else
         {
             plinkFile = genoFileAbPath + "/" + genoFileBaseName;
+        }
+
+        // Reserve the SNP of chr list file.
+        FileReader fileReader;
+        if (filterChrFlag)
+        {
+            emit runningMsgWidgetAppendText(QDateTime::currentDateTime().toString() +
+                                            + "\n" + "Filter SNP by chr list,\n");
+            QString snplistFile = plinkFile + "_snplist";
+            if (map.isNull())
+            {
+                map = genoFileAbPath+"/"+genoFileBaseName+".map";
+            }
+            // Make keep file list.
+            if (!fileReader.filterSNPByChrFromMap(map, filterChrListFile, snplistFile))
+            {
+                emit runningMsgWidgetAppendText(QDateTime::currentDateTime().toString() +
+                                                + "\n" + "Filter SNP by chr list ERROR.\n");
+                throw -1;
+            }
+            plink.extractBySnpNameFile(plinkFile+".ped", plinkFile+".map", snplistFile, plinkFile+"_fc");
+
+            if (!runExTool(this->toolpath+"plink", plink.getParamList()))
+            {
+                throw -1;
+            }
+            plinkFile = plinkFile+"_fc";
+
+            QFile file;
+            file.remove(snplistFile);
+
+            emit runningMsgWidgetAppendText(QDateTime::currentDateTime().toString() +
+                                            + "\n" + "Filter SNP by chr list OK.\n");
         }
 
         emit runningMsgWidgetAppendText(QDateTime::currentDateTime().toString() +
@@ -3009,7 +3087,9 @@ void MainWindow::runPopLDdecaySingle(void)
             if (!runExTool(this->scriptpath+"poplddecay/plink2genotype",
                            popLDdecay.getParamList()))
             {
-                return;
+                emit runningMsgWidgetAppendText(QDateTime::currentDateTime().toString() +
+                                                + "\n" + plinkFile + ".genotype ERROR.\n");
+                throw -1;
             }
 
             emit runningMsgWidgetAppendText(QDateTime::currentDateTime().toString() +
@@ -3041,7 +3121,9 @@ void MainWindow::runPopLDdecaySingle(void)
             if (!runExTool(this->toolpath+"PopLDdecay",
                            popLDdecay.getParamList()))
             {
-                return;
+                emit runningMsgWidgetAppendText(QDateTime::currentDateTime().toString() +
+                                                + "\nLD ERROR.\n");
+                throw -1;
             };
         }
         file.remove(plinkFile+".genotype");
@@ -3332,11 +3414,6 @@ bool MainWindow::runExTool(QString tool, QStringList param)
     proc->waitForFinished(-1);
 
     bool ret = true;
-    //    if (proc->exitCode() != Process::NormalExit)
-    //    {
-    //        emit runningMsgWidgetAppendText(proc->errorString());
-    //        ret = false;
-    //    }
     proc->close();
     delete proc;
     proc = nullptr;
@@ -3810,14 +3887,39 @@ void MainWindow::on_annoStepPushButton_clicked()
     this->runningFlag = false;
 }
 
-void MainWindow::on_compleFIDMafRadioButton_clicked()
+void MainWindow::on_compleFIDRadioButton_clicked()
 {
-    ui->fidFileLineEdit->setEnabled(ui->compleFIDMafRadioButton->isChecked());
-    ui->fidFileFileBrowButton->setEnabled(ui->compleFIDMafRadioButton->isChecked());
-    ui->fidWarnLabel->setHidden(!ui->compleFIDMafRadioButton->isChecked());
+    ui->fidFileLineEdit->setEnabled(ui->compleFIDRadioButton->isChecked());
+    ui->fidFileBrowButton->setEnabled(ui->compleFIDRadioButton->isChecked());
+    ui->fidWarnLabel->setHidden(!ui->compleFIDRadioButton->isChecked());
 }
 
-void MainWindow::on_fidFileFileBrowButton_clicked()
+void MainWindow::on_filterChrFileBrowButton_clicked()
+{
+    QFileDialog *fileDialog = new QFileDialog(this, "Open chr list file", "", "all(*)");
+    fileDialog->setViewMode(QFileDialog::Detail);
+
+    QStringList fileNames;
+    if (fileDialog->exec())
+    {
+        fileNames = fileDialog->selectedFiles();
+    }
+    delete fileDialog;
+    if (fileNames.isEmpty())    // If didn't choose any file.
+    {
+        return;
+    }
+
+    ui->filterChrFileLineEdit->setText(fileNames[0]);
+}
+
+void MainWindow::on_filterChrRadioButton_clicked()
+{
+    ui->filterChrFileLineEdit->setEnabled(ui->filterChrRadioButton->isChecked());
+    ui->filterChrFileBrowButton->setEnabled(ui->filterChrRadioButton->isChecked());
+}
+
+void MainWindow::on_fidFileBrowButton_clicked()
 {
     QFileDialog *fileDialog = new QFileDialog(this, "Open FID info file", "", "all(*)");
     fileDialog->setViewMode(QFileDialog::Detail);

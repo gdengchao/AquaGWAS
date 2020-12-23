@@ -127,9 +127,10 @@ private slots:
    void pca_ld_cmdButton_clicked();
    void annotationCmdButton_clicked();
 
-   void on_compleFIDMafRadioButton_clicked();
-
-   void on_fidFileFileBrowButton_clicked();
+   void on_compleFIDRadioButton_clicked();
+   void on_filterChrFileBrowButton_clicked();
+   void on_filterChrRadioButton_clicked();
+   void on_fidFileBrowButton_clicked();
 
 private:
     Ui::MainWindow *ui;

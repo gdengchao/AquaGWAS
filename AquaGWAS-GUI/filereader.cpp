@@ -284,57 +284,6 @@ bool FileReader::completeTfamFromPheno(QString phenoFilePath, QString tfamFilePa
 
     return true;
 }
-//bool FileReader::completeTfamFromPheno(QString phenoFilePath, QString tfamFilePath)
-//{
-//    if (phenoFilePath.isNull() || tfamFilePath.isNull())
-//    {
-//        return false;
-//    }
-
-//    QFile phenoFile(phenoFilePath);
-//    QFile tfamFile(tfamFilePath);
-
-//    if (!phenoFile.open(QIODevice::ReadOnly) ||
-//        !tfamFile.open(QIODevice::ReadOnly))
-//    {
-//        return false;
-//    }
-
-//    QString tmpTfamFilePath = tfamFilePath+".tmp";
-//    QFile tmpTfamFile(tmpTfamFilePath);
-//    if (!tmpTfamFile.open(QIODevice::WriteOnly))
-//    {
-//        return false;
-//    }
-
-//    QTextStream phenoFileStream(&phenoFile);
-//    QTextStream tfamFileStream(&tfamFile);
-//    QTextStream tmpTfamFileStream(&tmpTfamFile);
-
-//    while (!phenoFileStream.atEnd() || !tfamFileStream.atEnd())
-//    {
-//        QStringList phenoCurLineList = phenoFileStream.readLine().split(QRegExp("\\s+"), QString::SkipEmptyParts);
-//        QStringList tfamCurLineList = tfamFileStream.readLine().split(QRegExp("\\s+"), QString::SkipEmptyParts);
-
-//        if (phenoCurLineList[1] != tfamCurLineList[1])
-//        {   // IID don't match
-//            return false;
-//        }
-
-//        tfamCurLineList[0] = phenoCurLineList[0];
-
-//        tmpTfamFileStream << tfamCurLineList.join("\t") << endl;
-//    }
-
-//    phenoFile.close();
-//    tfamFile.close();
-//    tmpTfamFile.close();
-
-//    tfamFile.remove();
-//    tmpTfamFile.rename(tfamFilePath);
-
-//    return true;
-//}
 
 /**
  * @brief FileReader::completeFIDofTfam
@@ -501,5 +450,54 @@ bool FileReader::completeFIDofPed(QString fidFilePath, QString pedFilePath)
     pedFile.remove();
     tmpPedFile.rename(pedFilePath);
 
+    return true;
+}
+
+/**
+ * @brief FileReader::filterSNPByChrFromMap
+ * @param mapFilePath:  CHR SNP_ID Morgan BP
+ * @param chrListFilePath
+ * @param keepFilePath
+ * @return
+ */
+bool FileReader::filterSNPByChrFromMap(QString mapFilePath, QString chrListFilePath, QString snpListFilePath)
+{
+    if (mapFilePath.isNull() || chrListFilePath.isNull() || snpListFilePath.isNull())
+    {
+        return false;
+    }
+
+    QFile chrListFile(chrListFilePath);
+    QFile mapFile(mapFilePath);
+    QFile snpListFile(snpListFilePath);
+
+//    bool a  = chrListFile.open(QIODevice::ReadOnly);
+//    bool b = mapFile.open(QIODevice::ReadOnly);
+//    bool c = snpListFile.open(QIODevice::WriteOnly);
+    if (!chrListFile.open(QIODevice::ReadOnly) ||
+        !mapFile.open(QIODevice::ReadOnly) ||
+        !snpListFile.open(QIODevice::ReadWrite))
+    {
+        return false;
+    }
+
+    QTextStream mapFileStream(&mapFile);
+    QTextStream snpListFileStream(&snpListFile);
+    QTextStream chrListFileStream(&chrListFile);
+    QStringList chrList = chrListFileStream.readAll().split("\n");
+
+    while (!mapFileStream.atEnd())
+    {
+        QString curLine = mapFileStream.readLine();
+        QStringList curLineList = curLine.split(QRegExp("\\s+"), QString::SkipEmptyParts);
+        if (chrList.indexOf(curLineList[0]) != -1)
+        {
+            snpListFileStream << curLine << endl;
+        }
+    }
+
+    chrListFile.close();
+    mapFile.close();
+    snpListFile.close();
     return true;
 }
