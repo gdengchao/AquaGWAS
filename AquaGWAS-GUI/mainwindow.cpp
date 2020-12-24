@@ -2839,7 +2839,7 @@ void MainWindow::runPopLDdecaybyFamily(void)
             }
 
             // Make .genotype
-            if (!popLDdecay.makeGenotype(curGenotypeFile+".ped",
+            if (popLDdecay.makeGenotype(curGenotypeFile+".ped",
                                          curGenotypeFile+".map",
                                          curGenotypeFile+".genotype"))
             {
