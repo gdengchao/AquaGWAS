@@ -931,6 +931,13 @@ bool MainWindow::drawManAndQQ(QString inputFile)
         file.remove(item);
     }
 
+//     Show plot
+    if (this->runningFlag && checkoutExistence(manOutList[0]))
+    {
+        emit setGraphViewerGraphSig(manOutList+qqOutList);
+        QThread::msleep(10);
+    }
+
     return true;
 }
 
@@ -2688,7 +2695,7 @@ void MainWindow::runPopLDdecaybyFamily(void)
             {
                 map = genoFileAbPath+"/"+genoFileBaseName+".map";
             }
-            plink.filterData(genotype, map, maf, mind, geno, plinkFile);
+            plink.filterPlinkFile(genotype, map, maf, mind, geno, plinkFile);
             filterDataFlag = true;
         }
 
@@ -3029,7 +3036,7 @@ void MainWindow::runPopLDdecaySingle(void)
             {
                 map = genoFileAbPath+"/"+genoFileBaseName+".map";
             }
-            plink.filterData(genotype, map, maf, mind, geno, plinkFile);
+            plink.filterPlinkFile(genotype, map, maf, mind, geno, plinkFile);
             filterDataFlag = true;
         }
 

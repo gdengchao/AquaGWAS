@@ -745,7 +745,7 @@ void Plink::filterData(QString genotype, QString map, QString maf, QString mind,
 
     if (genoFileSuffix == "tped")
     {
-        this->filterPlinkFile(genotype, map, maf, mind, geno, out);
+        this->filterTransposeFile(genotype, map, maf, mind, geno, out);
     }
 
     if (genoFileSuffix == "bed")
