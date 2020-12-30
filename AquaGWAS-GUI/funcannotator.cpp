@@ -191,7 +191,8 @@ bool FuncAnnotator::complExoSnpInfo(QString const snpPosFilePath, QString const 
     QTextStream exValFuncFileStream(&exValFuncFile);
     while (!exValFuncFileStream.atEnd())
     {
-        QStringList curLine = exValFuncFileStream.readLine().split(QRegExp("\\s+"), QString::SkipEmptyParts);
+        // Here
+        QStringList curLine = exValFuncFileStream.readLine().split(QRegExp("\t"), QString::SkipEmptyParts);
         QString chr_bp = curLine[4] + "_" + curLine[5];
         if (snpPosInfoMap.find(chr_bp) == snpPosInfoMap.end())
         {
@@ -326,7 +327,8 @@ bool FuncAnnotator::complNonExoSnpInfo(QString const exonicPosFilePath, QString 
     QTextStream outFileStream(&outFile);
     while(!varFuncFileStream.atEnd())
     {
-        QStringList curLine = varFuncFileStream.readLine().split(QRegExp("\\s+"), QString::SkipEmptyParts);
+        // Here
+        QStringList curLine = varFuncFileStream.readLine().split(QRegExp("\t"), QString::SkipEmptyParts);
 //        if (curLine[0] == "intergenic")
 //        {   // Not to deal with.
 //            continue;

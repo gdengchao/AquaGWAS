@@ -110,7 +110,7 @@ bool FileReader::transformCovariateFile(QString srcCovar, QString desCovar)
     QTextStream desCovarFileStream(&desCovarFile);
 
     if (!srcCovarFile.open(QIODevice::ReadOnly) ||
-        !desCovarFile.open(QIODevice::ReadWrite))
+            !desCovarFile.open(QIODevice::ReadWrite))
     {   // Open file error.
         return false;
     }
@@ -119,8 +119,8 @@ bool FileReader::transformCovariateFile(QString srcCovar, QString desCovar)
         QString srcCovarCurLine = srcCovarFileStream.readLine();
         // Replace "NA" to "-9"
         QStringList srcCovarCurLineList =
-            srcCovarCurLine/*.replace("NA", "-9")*/.split(QRegExp("\\s+"),
-                                    QString::SkipEmptyParts);
+                srcCovarCurLine/*.replace("NA", "-9")*/.split(QRegExp("\\s+"),
+                                                              QString::SkipEmptyParts);
         srcCovarCurLineList.removeFirst();
         srcCovarCurLineList.removeFirst();
 
@@ -142,7 +142,7 @@ bool FileReader::transformCovariateFile(QString srcCovar, QString desCovar)
  * @return
  */
 bool FileReader::makeAvinputAndSnpposFile(QString vcfFilePath, QString pvalFilePath,
-                              QString avinputFilePath, QString snpPosFilePath)
+                                          QString avinputFilePath, QString snpPosFilePath)
 {
     if (vcfFilePath.isNull() || pvalFilePath.isNull() || avinputFilePath.isNull() || snpPosFilePath.isNull())
     {
@@ -167,8 +167,8 @@ bool FileReader::makeAvinputAndSnpposFile(QString vcfFilePath, QString pvalFileP
     QFile avinputFile(avinputFilePath);
     QFile snpPosFile(snpPosFilePath);
     if (!vcfFile.open(QIODevice::ReadOnly) ||
-        !avinputFile.open(QIODevice::WriteOnly) ||
-        !snpPosFile.open(QIODevice::WriteOnly))
+            !avinputFile.open(QIODevice::WriteOnly) ||
+            !snpPosFile.open(QIODevice::WriteOnly))
     {
         return false;
     }
@@ -195,10 +195,10 @@ bool FileReader::makeAvinputAndSnpposFile(QString vcfFilePath, QString pvalFileP
         {
             snpPosFileStream << snpIDMap[snpID] << "\t"
                              << (isNumber(curLineList[0]) ? "chr"+curLineList[0] : curLineList[0])
-                             << "\t" << curLineList[1] << endl;
+                    << "\t" << curLineList[1] << endl;
             avinputFileStream << (isNumber(curLineList[0]) ? "chr"+curLineList[0] : curLineList[0]) << "\t"
-                              << curLineList[1] << "\t" << curLineList[1] << "\t"
-                              << curLineList[3] << "\t" << curLineList[4] << endl;
+                                                                                                    << curLineList[1] << "\t" << curLineList[1] << "\t"
+                                                                                                    << curLineList[3] << "\t" << curLineList[4] << endl;
         }
     }
 
@@ -235,7 +235,7 @@ bool FileReader::completeTfamFromPheno(QString phenoFilePath, QString tfamFilePa
     QFile tfamFile(tfamFilePath);
 
     if (!phenoFile.open(QIODevice::ReadOnly) ||
-        !tfamFile.open(QIODevice::ReadOnly))
+            !tfamFile.open(QIODevice::ReadOnly))
     {
         return false;
     }
@@ -275,12 +275,73 @@ bool FileReader::completeTfamFromPheno(QString phenoFilePath, QString tfamFilePa
         tmpTfamFileStream << tfamCurLineList.join("\t") << endl;
     }
 
-//    phenoFile.close();
-//    tfamFile.close();
-//    tmpTfamFile.close();
+    //    phenoFile.close();
+    //    tfamFile.close();
+    //    tmpTfamFile.close();
 
     tfamFile.remove();
     tmpTfamFile.rename(tfamFilePath);
+
+    return true;
+}
+
+
+bool FileReader::completePedFromPheno(QString phenoFilePath, QString pedFilePath)
+{
+    if (phenoFilePath.isNull() || pedFilePath.isNull())
+    {
+        return false;
+    }
+
+    QFile phenoFile(phenoFilePath);
+    QFile pedFile(pedFilePath);
+
+    if (!phenoFile.open(QIODevice::ReadOnly) ||
+            !pedFile.open(QIODevice::ReadOnly))
+    {
+        return false;
+    }
+
+    QString tmpPedFilePath = pedFilePath+".tmp";
+    QFile tmpPedFile(tmpPedFilePath);
+    if (!tmpPedFile.open(QIODevice::WriteOnly))
+    {
+        return false;
+    }
+
+    QTextStream phenoFileStream(&phenoFile);
+    QTextStream pedFileStream(&pedFile);
+    QTextStream tmpPedFileStream(&tmpPedFile);
+
+    QMap<QString, QString> fidMap;
+    QStringList fidInfo = phenoFileStream.readAll().split("\n");
+    for (auto line : fidInfo)
+    {
+        QStringList curLineList = line.split(QRegExp("\\s+"));
+        if (curLineList.length() >= 2)
+        {
+            fidMap[curLineList[1]] = curLineList[0];
+        }
+    }
+
+    while (!pedFileStream.atEnd())
+    {
+        QStringList pedCurLineList = pedFileStream.readLine().split(QRegExp("\\s+"), QString::SkipEmptyParts);
+
+        if (fidMap.find(pedCurLineList[1]) != fidMap.end())
+        {   // IID don't match
+            pedCurLineList[0] = fidMap[pedCurLineList[1]];
+        }
+
+        tmpPedFileStream << pedCurLineList.join("\t") << endl;
+    }
+
+    //    phenoFile.close();
+    //    tfamFile.close();
+    //    tmpTfamFile.close();
+
+    pedFile.remove();
+    tmpPedFile.rename(pedFilePath);
 
     return true;
 }
@@ -302,7 +363,7 @@ bool FileReader::completeFIDofTfam(QString fidFilePath, QString tfamFilePath)
     QFile tfamFile(tfamFilePath);
 
     if (!fidFile.open(QIODevice::ReadOnly) ||
-        !tfamFile.open(QIODevice::ReadOnly))
+            !tfamFile.open(QIODevice::ReadOnly))
     {
         return false;
     }
@@ -349,7 +410,7 @@ bool FileReader::completeFIDofTfam(QString fidFilePath, QString tfamFilePath)
         if (fidMap.find(tfamCurLineList[1]) != fidMap.end())
         {   // IID don't match
             tfamCurLineList[0] = fidMap[tfamCurLineList[1]][0];
-//            tfamCurLineList[0] = fidMap[tfamCurLineList[1]];
+            //            tfamCurLineList[0] = fidMap[tfamCurLineList[1]];
             if (fidMap[tfamCurLineList[1]].length() == 5)
             {
                 tfamCurLineList[2] = fidMap[tfamCurLineList[1]][2];
@@ -362,9 +423,9 @@ bool FileReader::completeFIDofTfam(QString fidFilePath, QString tfamFilePath)
         tmpTfamFileStream << tfamCurLineList.join("\t") << endl;
     }
 
-//    phenoFile.close();
-//    tfamFile.close();
-//    tmpTfamFile.close();
+    //    phenoFile.close();
+    //    tfamFile.close();
+    //    tmpTfamFile.close();
 
     tfamFile.remove();
     tmpTfamFile.rename(tfamFilePath);
@@ -383,7 +444,7 @@ bool FileReader::completeFIDofPed(QString fidFilePath, QString pedFilePath)
     QFile pedFile(pedFilePath);
 
     if (!fidFile.open(QIODevice::ReadOnly) ||
-        !pedFile.open(QIODevice::ReadOnly))
+            !pedFile.open(QIODevice::ReadOnly))
     {
         return false;
     }
@@ -425,27 +486,23 @@ bool FileReader::completeFIDofPed(QString fidFilePath, QString pedFilePath)
 
     while (!pedFileStream.atEnd())
     {
-        QStringList tfamCurLineList = pedFileStream.readLine().split(QRegExp("\\s+"), QString::SkipEmptyParts);
+        QStringList pedCurLineList = pedFileStream.readLine().split(QRegExp("\\s+"), QString::SkipEmptyParts);
 
-        if (fidMap.find(tfamCurLineList[1]) != fidMap.end())
+        if (fidMap.find(pedCurLineList[1]) != fidMap.end())
         {   // IID don't match
-            tfamCurLineList[0] = fidMap[tfamCurLineList[1]][0];
-//            tfamCurLineList[0] = fidMap[tfamCurLineList[1]];
-            if (fidMap[tfamCurLineList[1]].length() == 5)
+            pedCurLineList[0] = fidMap[pedCurLineList[1]][0];
+            //            tfamCurLineList[0] = fidMap[tfamCurLineList[1]];
+            if (fidMap[pedCurLineList[1]].length() == 5)
             {
-                tfamCurLineList[2] = fidMap[tfamCurLineList[1]][2];
-                tfamCurLineList[3] = fidMap[tfamCurLineList[1]][3];
-                tfamCurLineList[4] = fidMap[tfamCurLineList[1]][4];
+                pedCurLineList[2] = fidMap[pedCurLineList[1]][2];
+                pedCurLineList[3] = fidMap[pedCurLineList[1]][3];
+                pedCurLineList[4] = fidMap[pedCurLineList[1]][4];
             }
         }
 
 
-        tmpPedFileStream << tfamCurLineList.join("\t") << endl;
+        tmpPedFileStream << pedCurLineList.join("\t") << endl;
     }
-
-//    phenoFile.close();
-//    tfamFile.close();
-//    tmpTfamFile.close();
 
     pedFile.remove();
     tmpPedFile.rename(pedFilePath);
@@ -471,12 +528,12 @@ bool FileReader::filterSNPByChrFromMap(QString mapFilePath, QString chrListFileP
     QFile mapFile(mapFilePath);
     QFile snpListFile(snpListFilePath);
 
-//    bool a  = chrListFile.open(QIODevice::ReadOnly);
-//    bool b = mapFile.open(QIODevice::ReadOnly);
-//    bool c = snpListFile.open(QIODevice::WriteOnly);
+    //    bool a  = chrListFile.open(QIODevice::ReadOnly);
+    //    bool b = mapFile.open(QIODevice::ReadOnly);
+    //    bool c = snpListFile.open(QIODevice::WriteOnly);
     if (!chrListFile.open(QIODevice::ReadOnly) ||
-        !mapFile.open(QIODevice::ReadOnly) ||
-        !snpListFile.open(QIODevice::ReadWrite))
+            !mapFile.open(QIODevice::ReadOnly) ||
+            !snpListFile.open(QIODevice::ReadWrite))
     {
         return false;
     }
@@ -499,5 +556,87 @@ bool FileReader::filterSNPByChrFromMap(QString mapFilePath, QString chrListFileP
     chrListFile.close();
     mapFile.close();
     snpListFile.close();
+    return true;
+}
+
+/**
+ * @brief FileReader::modifyChr
+ *      Hicam0 --> 0; Avoid error of gcta.(Modify original file)
+ * @param file
+ * @return
+ */
+bool FileReader::modifyChr(QString filePath)
+{
+    if (filePath.isNull())
+    {
+        return false;
+    }
+    QString tmpFilePath = filePath+".tmp";
+    QFile file(filePath);
+    QFile tmpFile(tmpFilePath);
+    if (!file.open(QIODevice::ReadOnly) || !tmpFile.open(QIODevice::WriteOnly))
+    {
+        return false;
+    }
+
+    QTextStream srcFileStream(&file);
+    QTextStream tmpFileStream(&tmpFile);
+
+    while (!file.atEnd())
+    {
+        QStringList curLineList = srcFileStream.readLine().split(QRegExp("\\s+"), QString::SkipEmptyParts);
+//        QString tmp = curLineList[0];
+        if (curLineList[0].toLower().indexOf(QRegExp("^(chr)?\\d+")) != -1)
+        {
+            return true;
+        }
+        QRegExp regExp(".*([0-9]+)");
+        int pos = regExp.indexIn(curLineList[0]);
+        QStringList list = regExp.capturedTexts();
+//        QString strA = regExp.cap(1);
+        curLineList[0] = regExp.cap(1);
+        tmpFileStream << curLineList.join(" ") << endl;
+    }
+
+    file.remove();
+    tmpFile.rename(filePath);
+
+    return true;
+}
+
+bool FileReader::modifyChr(QString srcFilePath, QString dstFilePath)
+{
+    if (srcFilePath.isNull() || dstFilePath.isNull())
+    {
+        return false;
+    }
+
+    QFile srcFile(srcFilePath);
+    QFile dstFile(dstFilePath);
+    if (!srcFile.open(QIODevice::ReadOnly) || !dstFile.open(QIODevice::WriteOnly))
+    {
+        return false;
+    }
+
+    QTextStream srcFileStream(&srcFile);
+    QTextStream dstFileStream(&dstFile);
+
+    while (!srcFile.atEnd())
+    {
+        QStringList curLineList = srcFileStream.readLine().split(QRegExp("\\s+"), QString::SkipEmptyParts);
+
+        if (curLineList[0].toLower().indexOf(QRegExp("^(chr)?\\d+")) != -1)
+        {
+            return true;
+        }
+        QRegExp regExp(".*([0-9]+)");
+        int pos = regExp.indexIn(curLineList[0]);
+        QStringList list = regExp.capturedTexts();
+//        QString strA = regExp.cap(1);
+        curLineList[0] = regExp.cap(1);
+        dstFileStream << curLineList.join(" ") << endl;
+    }
+
+
     return true;
 }

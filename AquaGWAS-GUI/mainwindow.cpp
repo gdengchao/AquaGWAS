@@ -29,7 +29,7 @@ MainWindow::MainWindow(QWidget *parent)
     // FID complete controler
     ui->fidFileLineEdit->setEnabled(false);
     ui->fidFileBrowButton->setEnabled(false);
-    ui->fidWarnLabel->setHidden(true);
+//    ui->fidWarnLabel->setHidden(true);
 
     // Chr filter
     ui->filterChrFileLineEdit->setEnabled(false);
@@ -1090,9 +1090,9 @@ bool MainWindow::callGemmaGwas(QString phenotype, QString genotype, QString map,
     {
         binaryFile = genoFileAbPath + "/" + genoFileBaseName;
     }
+    fileReader->completeTfamFromPheno(phenotype, binaryFile+".fam");
 
     Gemma gemma;
-
     if (gemmaParamWidget->isFamCompletedAuto())
     {
         // Replace "NA" to "-9", then complete .fam
@@ -1373,13 +1373,14 @@ bool MainWindow::callEmmaxGwas(QString phenotype, QString genotype, QString map,
         {
             return false;
         }
-        fileReader->completeTfamFromPheno(phenotype, transposeFile+".tfam");
         transformFileFlag = true;
     }
     else
     {
         transposeFile = genoFileAbPath + "/" + genoFileBaseName;
     }
+
+    fileReader->completeTfamFromPheno(phenotype, transposeFile+".tfam");
 
     Emmax emmax;
     if (kinship.isNull() && emmaxParamWidget->isMakeKinAuto())
@@ -1572,6 +1573,33 @@ bool MainWindow::callPlinkGwas(QString phenotype, QString genotype, QString map,
             emit setMsgBoxSig("Error", "Extract snp after linkage filter error.");
             return false;
         }
+    }
+
+    if (genotype.split(".")[genotype.split(".").length()-1] == "ped")
+    {
+        if (map.isNull())
+        {
+            map = genoFileAbPath+"/"+genoFileBaseName+".map";
+        }
+        fileReader->completePedFromPheno(phenotype, genotype);
+    }
+
+    if (genotype.split(".")[genotype.split(".").length()-1] == "tped")
+    {
+        if (map.isNull())
+        {
+            map = genoFileAbPath+"/"+genoFileBaseName+".tfam";
+        }
+        fileReader->completeTfamFromPheno(phenotype, map);
+    }
+
+    if (genotype.split(".")[genotype.split(".").length()-1] == "bed")
+    {
+        if (map.isNull())
+        {
+            map = genoFileAbPath+"/"+genoFileBaseName+".fam";
+        }
+        fileReader->completeTfamFromPheno(phenotype, map);
     }
 
     // Run GWAS(Set parameters)
@@ -2327,6 +2355,7 @@ void MainWindow::on_pcaRunPushButton_clicked()
             // Necessary to transform file ?
             bool transformFileFlag = false;
             bool filterDataFlag = false;
+            bool filterChrFlag = ui->filterChrRadioButton->isChecked();
 
             // Need binary files.  Every temp file and a "_tmp" after baseName, and will be deleted after gwas.
             Plink plink;
@@ -2432,7 +2461,43 @@ void MainWindow::on_pcaRunPushButton_clicked()
             }
             else
             {
-                binaryFile = genoFileAbPath + "/" + genoFileBaseName;
+                QFile::copy(genoFileAbPath + "/" + genoFileBaseName+".bed", binaryFile+".bed");
+                QFile::copy(genoFileAbPath + "/" + genoFileBaseName+".bim", binaryFile+".bim");
+                QFile::copy(genoFileAbPath + "/" + genoFileBaseName+".fam", binaryFile+".fam");
+                //                binaryFile = genoFileAbPath + "/" + genoFileBaseName;
+            }
+            fileReader->modifyChr(binaryFile+".bim");
+
+            // Reserve the SNP of chr list file.
+            if (filterChrFlag)
+            {
+                emit runningMsgWidgetAppendText(QDateTime::currentDateTime().toString() +
+                                                + "\n" + "Filter SNP by chr list,\n");
+                QString snplistFile = binaryFile + "_snplist";
+                if (map.isNull())
+                {
+                    map = genoFileAbPath+"/"+genoFileBaseName+".map";
+                }
+                // Make keep file list.
+                if (!fileReader->filterSNPByChrFromMap(map, binaryFile, snplistFile))
+                {
+                    emit runningMsgWidgetAppendText(QDateTime::currentDateTime().toString() +
+                                                    + "\n" + "Filter SNP by chr list ERROR.\n");
+                    throw -1;
+                }
+                plink.extractBySnpNameFile(binaryFile+".bed", "", snplistFile, binaryFile+"_fc");
+
+                if (!runExTool(this->toolpath+"plink", plink.getParamList()))
+                {
+                    throw -1;
+                }
+                binaryFile = binaryFile+"_fc";
+
+                QFile file;
+                file.remove(snplistFile);
+
+                emit runningMsgWidgetAppendText(QDateTime::currentDateTime().toString() +
+                                                + "\n" + "Filter SNP by chr list OK.\n");
             }
 
             // Complete FID info.
@@ -2469,7 +2534,7 @@ void MainWindow::on_pcaRunPushButton_clicked()
             }
 
             QFile file;
-            if (transformFileFlag && binaryFile+".bed" != fileReader->getGenotypeFile())
+            if ((transformFileFlag || filterDataFlag) && binaryFile+".bed" != fileReader->getGenotypeFile())
             {
                 file.remove(binaryFile+".bed");
                 file.remove(binaryFile+".bim");
@@ -2812,8 +2877,7 @@ void MainWindow::runPopLDdecaybyFamily(void)
                                             "\nMake "+keepFileBaseName+".genotype,\n");
             QThread::msleep(10);
 
-            // Reserve SNP in chr list file
-            FileReader fileReader;
+            // Reserve SNP in chr list fileW
             if (filterChrFlag)
             {
                 emit runningMsgWidgetAppendText(QDateTime::currentDateTime().toString() +
@@ -2824,7 +2888,7 @@ void MainWindow::runPopLDdecaybyFamily(void)
                     map = curGenotypeFile+".map";
                 }
                 // Make keep file list.
-                if (!fileReader.filterSNPByChrFromMap(map, filterChrListFile, snplistFile))
+                if (!fileReader->filterSNPByChrFromMap(map, filterChrListFile, snplistFile))
                 {
                     emit runningMsgWidgetAppendText(QDateTime::currentDateTime().toString() +
                                                     + "\n" + "Filter SNP by chr list ERROR.\n");
@@ -3053,7 +3117,6 @@ void MainWindow::runPopLDdecaySingle(void)
         }
 
         // Reserve the SNP of chr list file.
-        FileReader fileReader;
         if (filterChrFlag)
         {
             emit runningMsgWidgetAppendText(QDateTime::currentDateTime().toString() +
@@ -3064,7 +3127,7 @@ void MainWindow::runPopLDdecaySingle(void)
                 map = genoFileAbPath+"/"+genoFileBaseName+".map";
             }
             // Make keep file list.
-            if (!fileReader.filterSNPByChrFromMap(map, filterChrListFile, snplistFile))
+            if (!fileReader->filterSNPByChrFromMap(map, filterChrListFile, snplistFile))
             {
                 emit runningMsgWidgetAppendText(QDateTime::currentDateTime().toString() +
                                                 + "\n" + "Filter SNP by chr list ERROR.\n");
@@ -3898,7 +3961,7 @@ void MainWindow::on_compleFIDRadioButton_clicked()
 {
     ui->fidFileLineEdit->setEnabled(ui->compleFIDRadioButton->isChecked());
     ui->fidFileBrowButton->setEnabled(ui->compleFIDRadioButton->isChecked());
-    ui->fidWarnLabel->setHidden(!ui->compleFIDRadioButton->isChecked());
+//    ui->fidWarnLabel->setHidden(!ui->compleFIDRadioButton->isChecked());
 }
 
 void MainWindow::on_filterChrFileBrowButton_clicked()

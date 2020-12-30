@@ -125,8 +125,11 @@ int main(int argc, char *argv[])
 //    fileReader.completeFIDofTfam("/home/yingwang/Desktop/fid_info", "/home/yingwang/Desktop/222_filter1.tfam");
     //    fileReader.completeTfamFromPheno("/mnt/my_share/dchao/data/test_data/test_data/phenotmp.txt", "/mnt/my_share/dchao/data/test_data/test_data/test.tfam");
 
-//    FileReader fileReader;
 //    fileReader.filterSNPByChrFromMap("/mnt/my_share/dchao/test/snp_1059.map", "/mnt/my_share/dchao/test/list_for_chr", "/mnt/my_share/dchao/test/list_for_snp_2");
+
+
+//    FileReader fileReader;
+//    fileReader.modifyChr("/mnt/my_share/dchao/a");
 
     MainWindow w;
     w.show();
