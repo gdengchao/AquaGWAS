@@ -86,7 +86,6 @@ QStringList FileReader::getFIDList(QString const src, int col)
         {   // Append to FID list if not in FID list.
             fidList.append(curLine[col-1]);
         }
-        qApp->processEvents();  // Prevent "no responding" of MainWindow.
     }
     return fidList;
 }
@@ -512,7 +511,7 @@ bool FileReader::completeFIDofPed(QString fidFilePath, QString pedFilePath)
 
 /**
  * @brief FileReader::filterSNPByChrFromMap
- * @param mapFilePath:  CHR SNP_ID Morgan BP
+ * @param mapFilePath:  CHR SNP_ID Morgan BP(Allow file the first column is CHR)
  * @param chrListFilePath
  * @param keepFilePath
  * @return
@@ -542,6 +541,7 @@ bool FileReader::filterSNPByChrFromMap(QString mapFilePath, QString chrListFileP
     QTextStream snpListFileStream(&snpListFile);
     QTextStream chrListFileStream(&chrListFile);
     QStringList chrList = chrListFileStream.readAll().split("\n");
+    chrList.removeDuplicates();
 
     while (!mapFileStream.atEnd())
     {
@@ -588,6 +588,7 @@ bool FileReader::modifyChr(QString filePath)
 //        QString tmp = curLineList[0];
         if (curLineList[0].toLower().indexOf(QRegExp("^(chr)?\\d+")) != -1)
         {
+            tmpFile.remove();
             return true;
         }
         QRegExp regExp(".*([0-9]+)");

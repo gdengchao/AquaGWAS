@@ -435,7 +435,7 @@ void Plink::linkageFilter(QString genotype, QString map,
     this->paramlist.append(out);
 }
 
-void Plink::extractBySnpNameFile(QString genotype, QString map, QString snpIDFile, QString out)
+void Plink::extractBySnpNameFile(QString genotype, QString map, QString snpIDFile, QString outPath, QString outType)
 {
     // Genotype file info.
     QFileInfo genoFileInfo = QFileInfo(genotype);
@@ -486,9 +486,30 @@ void Plink::extractBySnpNameFile(QString genotype, QString map, QString snpIDFil
     this->paramlist.append("--allow-no-sex");
     this->paramlist.append("--extract");
     this->paramlist.append(snpIDFile);
-    this->paramlist.append("--recode");
+
+    if (outType == "binary")
+    {
+        this->paramlist.append("--make-bed");
+    }
+    else if (outType == "plink")
+    {
+        this->paramlist.append("--recode");
+    }
+    else if (outType == "transpose")
+    {
+        this->paramlist.append("--recode");
+        this->paramlist.append("12");
+        this->paramlist.append("transpose");
+        this->paramlist.append("--output-missing-genotype");
+        this->paramlist.append("0");
+    }
+    else if (outType == "vcf")
+    {
+        this->paramlist.append("--recode");
+        this->paramlist.append("vcf");
+    }
     this->paramlist.append("--out");
-    this->paramlist.append(out);
+    this->paramlist.append(outPath);
 }
 
 bool Plink::runGWAS(QString phenotype, QString genotype, QString map, QString covariate, QString kinship,

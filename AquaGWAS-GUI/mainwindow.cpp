@@ -1003,7 +1003,7 @@ bool MainWindow::callGemmaGwas(QString phenotype, QString genotype, QString map,
             return false;
         }
 
-        plink.extractBySnpNameFile(genotype, map, filteredSnpIDFile, linkageFilteredFilePrefix);
+        plink.extractBySnpNameFile(genotype, map, filteredSnpIDFile, linkageFilteredFilePrefix, "plink");
 
         if (!runExTool(this->toolpath+"plink", plink.getParamList()))
         {
@@ -1305,7 +1305,7 @@ bool MainWindow::callEmmaxGwas(QString phenotype, QString genotype, QString map,
 
         QString filteredSnpIDFile = linkageFilteredFilePrefix + ".prune.in";
 
-        plink.extractBySnpNameFile(genotype, map, filteredSnpIDFile, linkageFilteredFilePrefix);
+        plink.extractBySnpNameFile(genotype, map, filteredSnpIDFile, linkageFilteredFilePrefix, "plink");
 
         if (!runExTool(this->toolpath+"plink", plink.getParamList()))
         {
@@ -1545,7 +1545,7 @@ bool MainWindow::callPlinkGwas(QString phenotype, QString genotype, QString map,
             return false;
         }
 
-        plink.extractBySnpNameFile(genotype, map, filteredSnpIDFile, linkageFilteredFilePrefix);
+        plink.extractBySnpNameFile(genotype, map, filteredSnpIDFile, linkageFilteredFilePrefix, "plink");
 
         emit runningMsgWidgetAppendText("Extract by SNP name\n");
 
@@ -2380,7 +2380,7 @@ void MainWindow::on_pcaRunPushButton_clicked()
                     throw -1;
                 }
 
-                plink.extractBySnpNameFile(genotype, map, filteredSnpIDFile, linkageFilteredFilePrefix);
+                plink.extractBySnpNameFile(genotype, map, filteredSnpIDFile, linkageFilteredFilePrefix, "plink");
 
                 if (!runExTool(this->toolpath+"plink", plink.getParamList()))
                 {
@@ -2466,7 +2466,6 @@ void MainWindow::on_pcaRunPushButton_clicked()
                 QFile::copy(genoFileAbPath + "/" + genoFileBaseName+".fam", binaryFile+".fam");
                 //                binaryFile = genoFileAbPath + "/" + genoFileBaseName;
             }
-            fileReader->modifyChr(binaryFile+".bim");
 
             // Reserve the SNP of chr list file.
             if (filterChrFlag)
@@ -2474,31 +2473,38 @@ void MainWindow::on_pcaRunPushButton_clicked()
                 emit runningMsgWidgetAppendText(QDateTime::currentDateTime().toString() +
                                                 + "\n" + "Filter SNP by chr list,\n");
                 QString snplistFile = binaryFile + "_snplist";
-                if (map.isNull())
-                {
-                    map = genoFileAbPath+"/"+genoFileBaseName+".map";
-                }
                 // Make keep file list.
-                if (!fileReader->filterSNPByChrFromMap(map, binaryFile, snplistFile))
+                QString listForChr = ui->filterChrFileLineEdit->text();
+                if (!fileReader->filterSNPByChrFromMap(binaryFile+".bim", listForChr, snplistFile))
                 {
                     emit runningMsgWidgetAppendText(QDateTime::currentDateTime().toString() +
                                                     + "\n" + "Filter SNP by chr list ERROR.\n");
                     throw -1;
                 }
-                plink.extractBySnpNameFile(binaryFile+".bed", "", snplistFile, binaryFile+"_fc");
+                plink.extractBySnpNameFile(binaryFile+".bed", "", snplistFile, binaryFile+"_fc", "binary");
 
                 if (!runExTool(this->toolpath+"plink", plink.getParamList()))
                 {
                     throw -1;
                 }
-                binaryFile = binaryFile+"_fc";
 
                 QFile file;
                 file.remove(snplistFile);
+                if (binaryFile != genoFileAbPath + "/" + genoFileBaseName)
+                {
+                    file.remove(binaryFile+".bed");
+//                    file.remove(binaryFile+".bim");
+                    file.remove(binaryFile+".fam");
+                }
+                file.remove(binaryFile+".nosex");
+                file.remove(binaryFile+".log");
 
+                binaryFile = binaryFile+"_fc";
                 emit runningMsgWidgetAppendText(QDateTime::currentDateTime().toString() +
                                                 + "\n" + "Filter SNP by chr list OK.\n");
             }
+            // Avoid error when format of chr is "Hicasm0"
+            fileReader->modifyChr(binaryFile+".bim");
 
             // Complete FID info.
             if (completeFidFlag)
@@ -2536,9 +2542,9 @@ void MainWindow::on_pcaRunPushButton_clicked()
             QFile file;
             if ((transformFileFlag || filterDataFlag) && binaryFile+".bed" != fileReader->getGenotypeFile())
             {
-                file.remove(binaryFile+".bed");
-                file.remove(binaryFile+".bim");
-                file.remove(binaryFile+".fam");
+//                file.remove(binaryFile+".bed");
+//                file.remove(binaryFile+".bim");
+//                file.remove(binaryFile+".fam");
                 file.remove(binaryFile+".nosex");
             }
             file.remove(binaryFile+".grm.bin");
@@ -2695,7 +2701,7 @@ void MainWindow::runPopLDdecaybyFamily(void)
                 throw -1;
             }
 
-            plink.extractBySnpNameFile(genotype, map, filteredSnpIDFile, linkageFilteredFilePrefix);
+            plink.extractBySnpNameFile(genotype, map, filteredSnpIDFile, linkageFilteredFilePrefix, "plink");
 
             if (!runExTool(this->toolpath+"plink", plink.getParamList()))
             {
@@ -2883,23 +2889,31 @@ void MainWindow::runPopLDdecaybyFamily(void)
                 emit runningMsgWidgetAppendText(QDateTime::currentDateTime().toString() +
                                                 + "\n" + "Filter SNP by chr list,\n");
                 QString snplistFile = curGenotypeFile + "_snplist";
-                if (map.isNull())
-                {
-                    map = curGenotypeFile+".map";
-                }
                 // Make keep file list.
-                if (!fileReader->filterSNPByChrFromMap(map, filterChrListFile, snplistFile))
+                if (!fileReader->filterSNPByChrFromMap(curGenotypeFile+".map", filterChrListFile, snplistFile))
                 {
                     emit runningMsgWidgetAppendText(QDateTime::currentDateTime().toString() +
                                                     + "\n" + "Filter SNP by chr list ERROR.\n");
                     throw -1;
                 }
-                plink.extractBySnpNameFile(curGenotypeFile+".ped", curGenotypeFile+".map", snplistFile, curGenotypeFile+"_fc");
+                plink.extractBySnpNameFile(curGenotypeFile+".ped", curGenotypeFile+".map", snplistFile, curGenotypeFile+"_fc", "plink");
 
                 if (!runExTool(this->toolpath+"plink", plink.getParamList()))
                 {
                     throw -1;
                 }
+
+                file.remove(snplistFile);
+                if (plinkFile != genoFileAbPath + "/" + genoFileBaseName)
+                {
+                    file.remove(plinkFile+".ped");
+                    file.remove(plinkFile+".map");
+                }
+                file.remove(plinkFile+".nosex");
+                file.remove(plinkFile+".log");
+
+                plinkFile = plinkFile+"_fc";
+
                 curGenotypeFile = curGenotypeFile+"_fc";
 
                 QFile file;
@@ -3035,7 +3049,7 @@ void MainWindow::runPopLDdecaySingle(void)
                 throw -1;
             }
 
-            plink.extractBySnpNameFile(genotype, map, filteredSnpIDFile, linkageFilteredFilePrefix);
+            plink.extractBySnpNameFile(genotype, map, filteredSnpIDFile, linkageFilteredFilePrefix, "plink");
 
             if (!runExTool(this->toolpath+"plink", plink.getParamList()))
             {
@@ -3122,28 +3136,32 @@ void MainWindow::runPopLDdecaySingle(void)
             emit runningMsgWidgetAppendText(QDateTime::currentDateTime().toString() +
                                             + "\n" + "Filter SNP by chr list,\n");
             QString snplistFile = plinkFile + "_snplist";
-            if (map.isNull())
-            {
-                map = genoFileAbPath+"/"+genoFileBaseName+".map";
-            }
             // Make keep file list.
-            if (!fileReader->filterSNPByChrFromMap(map, filterChrListFile, snplistFile))
+            if (!fileReader->filterSNPByChrFromMap(plinkFile+".map", filterChrListFile, snplistFile))
             {
                 emit runningMsgWidgetAppendText(QDateTime::currentDateTime().toString() +
                                                 + "\n" + "Filter SNP by chr list ERROR.\n");
                 throw -1;
             }
-            plink.extractBySnpNameFile(plinkFile+".ped", plinkFile+".map", snplistFile, plinkFile+"_fc");
+            plink.extractBySnpNameFile(plinkFile+".ped", plinkFile+".map", snplistFile, plinkFile+"_fc", "plink");
 
             if (!runExTool(this->toolpath+"plink", plink.getParamList()))
             {
                 throw -1;
             }
-            plinkFile = plinkFile+"_fc";
+
 
             QFile file;
             file.remove(snplistFile);
+            if (plinkFile != genoFileAbPath + "/" + genoFileBaseName)
+            {
+                file.remove(plinkFile+".ped");
+                file.remove(plinkFile+".map");
+            }
+            file.remove(plinkFile+".nosex");
+            file.remove(plinkFile+".log");
 
+            plinkFile = plinkFile+"_fc";
             emit runningMsgWidgetAppendText(QDateTime::currentDateTime().toString() +
                                             + "\n" + "Filter SNP by chr list OK.\n");
         }
