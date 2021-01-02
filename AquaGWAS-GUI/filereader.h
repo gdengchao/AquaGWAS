@@ -35,6 +35,8 @@ public:
     bool filterSNPByChrFromMap(QString mapFilePath, QString chrListFilePath, QString snpListFilePath);
     bool modifyChr(QString file);
     bool modifyChr(QString srcFilePath, QString dstFilePath);
+    bool completeSnpID(QString filePath);
+    bool isVcfFile(QString const file);
 private:
     QString phenotypeFile;
     QString genotypeFile;

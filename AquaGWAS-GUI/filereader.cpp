@@ -638,6 +638,125 @@ bool FileReader::modifyChr(QString srcFilePath, QString dstFilePath)
         dstFileStream << curLineList.join(" ") << endl;
     }
 
+    return true;
+}
+
+/**
+ * @brief FileReader::completeSnpID
+ * @param filePath
+ *          vcf:    CHR Pos SNP ...
+ *          map:    CHR SNP Morgan BP
+ *          bim:    CHR SNP Morgan BP ...
+ *          tped:   CHR SNP Morgan BP ...
+ * @return
+ */
+bool FileReader::completeSnpID(QString filePath)
+{
+    if (filePath.isNull())
+    {
+        return false;
+    }
+
+    QString tmpFilePath = filePath+".tmp";
+    QFile file(filePath);
+    QFile tmpFile(tmpFilePath);
+
+    if (!file.open(QIODevice::ReadOnly) || !tmpFile.open(QIODevice::WriteOnly))
+    {
+        return false;
+    }
+
+    QFileInfo fileInfo(file);
+    QString suffix = fileInfo.suffix();
+
+    int chrIndex = -1;
+    int bpIndex = -1;
+    int snpIndex = -1;
+
+    if (suffix == "vcf")
+    {
+        chrIndex = 0;
+        bpIndex = 1;
+        snpIndex = 2;
+    }
+    else if (suffix == "map")
+    {
+        chrIndex = 0;
+        snpIndex = 1;
+        bpIndex = 4;
+    }
+    else if (suffix == "bim")
+    {
+        chrIndex = 0;
+        snpIndex = 1;
+        bpIndex = 4;
+    }
+    else if(suffix == "tped")
+    {
+        chrIndex = 0;
+        snpIndex = 1;
+        bpIndex = 4;
+    }
+    else
+    {
+        return false;
+    }
+
+    QTextStream fileStream(&file);
+    QTextStream tmpFileStream(&tmpFile);
+
+    while (!file.atEnd())
+    {
+        QString curLine = fileStream.readLine();
+        if (curLine[0] == "#")
+        {
+            continue;
+        }
+        QStringList curLineList = curLine.split("\t", QString::SkipEmptyParts);
+
+        if(curLineList[snpIndex] != '.')
+        {   // Dose not need to be completed.
+            tmpFile.remove();
+            return true;
+        }
+
+        QString debugSnp = curLineList[snpIndex];
+
+        qDebug() << "Before: " << debugSnp;
+
+        curLineList[snpIndex] = curLineList[chrIndex] + ":" + curLineList[bpIndex];
+        if (isNumber(curLineList[chrIndex]))
+        {
+            curLineList[snpIndex] = "chr" + curLineList[snpIndex];
+        }
+
+        qDebug() << "After: " << curLineList[snpIndex];
+        tmpFileStream << curLineList.join("\t") << endl;
+    }
+
+    file.remove();
+    tmpFile.rename(filePath);
 
     return true;
+}
+
+bool FileReader::isVcfFile(QString file) // Just consider filename.
+{
+    if (file.isNull() || file.isEmpty())
+    {
+        return false;
+    }
+
+    QFileInfo fileInfo = QFileInfo(file);
+    QStringList fileNameList = fileInfo.fileName().split(".");         // demo.vcf.gz
+
+    for (QString item : fileNameList)
+    {
+        if (item == "vcf")
+        {
+            return true;
+        }
+    }
+
+    return false;
 }
