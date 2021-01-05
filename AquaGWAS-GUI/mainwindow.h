@@ -192,5 +192,6 @@ private:
     void functionalAnnotation(QString snpPosFilePath, QString varFuncFilePath,
                               QString exVarFuncFilePath, QString funcAnnoBase);
     void addFilesExecutePermission(QString dir);
+    bool completeSnpID(QString genotype);
 };
 #endif // MAINWINDOW_H

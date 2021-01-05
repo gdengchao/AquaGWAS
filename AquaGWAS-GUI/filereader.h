@@ -32,7 +32,7 @@ public:
     bool completeFIDofTfam(QString fidFilePath, QString tfamFilePath);
     bool completeFIDofPed(QString fidFilePath, QString pedFilePath);
     bool isNumber(QString str);
-    bool filterSNPByChrFromMap(QString mapFilePath, QString chrListFilePath, QString snpListFilePath);
+    bool filterSNPByChr(QString mapFilePath, QString chrListFilePath, QString snpListFilePath);
     bool modifyChr(QString file);
     bool modifyChr(QString srcFilePath, QString dstFilePath);
     bool completeSnpID(QString filePath);

@@ -735,6 +735,11 @@ void MainWindow::on_runGwasButton_clicked()
     QString out = this->workDirectory->getOutputDirectory();  // Include project name.
     QString name = this->workDirectory->getProjectName();
 
+    if (phenotype.isNull())
+    {
+        QMessageBox::information(nullptr, "Error", "Plese select a phenotype file!  ");
+        return;
+    }
     if (genotype.isNull())
     {
         QMessageBox::information(nullptr, "Error", "Plese select a genotype file!  ");
@@ -983,6 +988,11 @@ bool MainWindow::callGemmaGwas(QString phenotype, QString genotype, QString map,
     // Need binary files.  Every temp file and a "_tmp" after baseName, and will be deleted after gwas.
     Plink plink;
 
+    if (!completeSnpID(genotype))
+    {
+        return false;
+    }
+
     if (qualityControl->isLinkageFilterNeeded())
     {
         QString linkageFilteredFilePrefix = genoFileAbPath + "/" + genoFileBaseName + "_ldfl";
@@ -1147,7 +1157,7 @@ bool MainWindow::callGemmaGwas(QString phenotype, QString genotype, QString map,
         covar = desCovar;
     }
 
-    if (!gemma.runGWAS(genoFileAbPath+"/"+genoFileBaseName+"_tmp", phenotype, covar, kinship,
+    if (!gemma.runGWAS(binaryFile, phenotype, covar, kinship,
                        name+"_"+pheFileBaseName, model, moreParam))
     {
         emit resetWindowSig();
@@ -1290,6 +1300,11 @@ bool MainWindow::callEmmaxGwas(QString phenotype, QString genotype, QString map,
 
     // Need tped/fam files. Add "_tmp", then delete after gwas.
     Plink plink;
+
+    if (!completeSnpID(genotype))
+    {
+        return false;
+    }
 
     if (qualityControl->isLinkageFilterNeeded())
     {
@@ -1523,6 +1538,12 @@ bool MainWindow::callPlinkGwas(QString phenotype, QString genotype, QString map,
     QString pheFileBaseName = pheFileInfo.baseName();
 
     Plink plink;
+
+    if (!completeSnpID(genotype))
+    {
+        return false;
+    }
+
     // Linkage filter
     if (qualityControl->isLinkageFilterNeeded())
     {
@@ -2360,6 +2381,11 @@ void MainWindow::on_pcaRunPushButton_clicked()
             // Need binary files.  Every temp file and a "_tmp" after baseName, and will be deleted after gwas.
             Plink plink;
 
+            if (!completeSnpID(genotype))
+            {
+                throw -1;
+            }
+
             if (qualityControl->isLinkageFilterNeeded())
             {
                 QString linkageFilteredFilePrefix = genoFileAbPath + "/" + genoFileBaseName + "_ldfl";
@@ -2475,7 +2501,7 @@ void MainWindow::on_pcaRunPushButton_clicked()
                 QString snplistFile = binaryFile + "_snplist";
                 // Make keep file list.
                 QString listForChr = ui->filterChrFileLineEdit->text();
-                if (!fileReader->filterSNPByChrFromMap(binaryFile+".bim", listForChr, snplistFile))
+                if (!fileReader->filterSNPByChr(binaryFile+".bim", listForChr, snplistFile))
                 {
                     emit runningMsgWidgetAppendText(QDateTime::currentDateTime().toString() +
                                                     + "\n" + "Filter SNP by chr list ERROR.\n");
@@ -2492,14 +2518,15 @@ void MainWindow::on_pcaRunPushButton_clicked()
                 file.remove(snplistFile);
                 if (binaryFile != genoFileAbPath + "/" + genoFileBaseName)
                 {
-                    file.remove(binaryFile+".bed");
+//                    file.remove(binaryFile+".bed");
 //                    file.remove(binaryFile+".bim");
-                    file.remove(binaryFile+".fam");
+//                    file.remove(binaryFile+".fam");
                 }
                 file.remove(binaryFile+".nosex");
                 file.remove(binaryFile+".log");
 
                 binaryFile = binaryFile+"_fc";
+
                 emit runningMsgWidgetAppendText(QDateTime::currentDateTime().toString() +
                                                 + "\n" + "Filter SNP by chr list OK.\n");
             }
@@ -2680,6 +2707,11 @@ void MainWindow::runPopLDdecaybyFamily(void)
 
         bool filterChrFlag = ui->filterChrRadioButton->isChecked();
         QString filterChrListFile = ui->filterChrFileLineEdit->text();
+
+        if (!completeSnpID(genotype))
+        {
+            throw -1;
+        }
 
         if (qualityControl->isLinkageFilterNeeded())
         {
@@ -2890,7 +2922,7 @@ void MainWindow::runPopLDdecaybyFamily(void)
                                                 + "\n" + "Filter SNP by chr list,\n");
                 QString snplistFile = curGenotypeFile + "_snplist";
                 // Make keep file list.
-                if (!fileReader->filterSNPByChrFromMap(curGenotypeFile+".map", filterChrListFile, snplistFile))
+                if (!fileReader->filterSNPByChr(curGenotypeFile+".map", filterChrListFile, snplistFile))
                 {
                     emit runningMsgWidgetAppendText(QDateTime::currentDateTime().toString() +
                                                     + "\n" + "Filter SNP by chr list ERROR.\n");
@@ -3010,6 +3042,7 @@ void MainWindow::runPopLDdecaySingle(void)
         QString genoFileAbPath = genoFileInfo.absolutePath();
         QString genoFileName = genoFileInfo.fileName();
         QString genoFileBaseName = genoFileInfo.baseName();
+        QString genoFileSuffix = genoFileInfo.suffix();
         QString map = this->fileReader->getMapFile();
         QString out = this->workDirectory->getOutputDirectory();
         QString name = this->workDirectory->getProjectName();
@@ -3028,6 +3061,11 @@ void MainWindow::runPopLDdecaySingle(void)
 
         // Need plink files.  Every temp file and a "_tmp" after baseName, and will be deleted after gwas.
         Plink plink;
+
+        if (!completeSnpID(genotype))
+        {
+            throw -1;
+        }
 
         if (qualityControl->isLinkageFilterNeeded())
         {
@@ -3137,7 +3175,7 @@ void MainWindow::runPopLDdecaySingle(void)
                                             + "\n" + "Filter SNP by chr list,\n");
             QString snplistFile = plinkFile + "_snplist";
             // Make keep file list.
-            if (!fileReader->filterSNPByChrFromMap(plinkFile+".map", filterChrListFile, snplistFile))
+            if (!fileReader->filterSNPByChr(plinkFile+".map", filterChrListFile, snplistFile))
             {
                 emit runningMsgWidgetAppendText(QDateTime::currentDateTime().toString() +
                                                 + "\n" + "Filter SNP by chr list ERROR.\n");
@@ -4024,4 +4062,58 @@ void MainWindow::on_fidFileBrowButton_clicked()
     }
 
     ui->fidFileLineEdit->setText(fileNames[0]);
+}
+
+bool MainWindow::completeSnpID(QString genotype)
+{
+    if (genotype.isNull())
+    {
+        return false;
+    }
+
+    QFileInfo fileInfo(genotype);
+    QString genoFileAbPath = fileInfo.absolutePath();
+    QString genoFileBaseName = fileInfo.baseName();
+    QString genoFileSuffix = fileInfo.suffix();
+    emit runningMsgWidgetAppendText("Complete SNP ID, \n");
+    bool completeFlag = true;
+    try {
+        if (isVcfFile(genotype))
+        {
+            if (!fileReader->completeSnpID(genotype))
+            {
+                throw -1;
+            }
+        }
+        if (genoFileSuffix == "ped")
+        {
+            if (!fileReader->completeSnpID(genoFileAbPath+"/"+genoFileBaseName+".map"))
+            {
+                throw -1;
+            }
+        }
+        else if (genoFileSuffix == "tped")
+        {
+            if (!fileReader->completeSnpID(genotype))
+            {
+                throw -1;
+            }
+        }
+        else if (genoFileSuffix == "bed")
+        {
+            if (!fileReader->completeSnpID(genoFileAbPath+"/"+genoFileBaseName+".bim"))
+            {
+                throw -1;
+            }
+        }
+    } catch (...) {
+        completeFlag = false;
+        emit runningMsgWidgetAppendText("Complete SNP ID ERROR.\n");
+    }
+    if (completeFlag)
+    {
+        emit runningMsgWidgetAppendText("Complete SNP ID OK.\n");
+    }
+
+    return true;
 }

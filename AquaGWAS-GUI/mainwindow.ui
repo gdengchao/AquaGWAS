@@ -65,7 +65,7 @@
      <enum>QTabWidget::Rounded</enum>
     </property>
     <property name="currentIndex">
-     <number>2</number>
+     <number>1</number>
     </property>
     <property name="iconSize">
      <size>
@@ -1195,7 +1195,7 @@ background-color: rgb(0, 0, 0);</string>
             </property>
             <item>
              <property name="text">
-              <string>plink</string>
+              <string>emmax</string>
              </property>
             </item>
             <item>
@@ -1205,7 +1205,7 @@ background-color: rgb(0, 0, 0);</string>
             </item>
             <item>
              <property name="text">
-              <string>emmax</string>
+              <string>plink</string>
              </property>
             </item>
            </widget>
@@ -1260,7 +1260,7 @@ background-color: rgb(0, 0, 0);</string>
            <widget class="QComboBox" name="modelComboBox">
             <property name="minimumSize">
              <size>
-              <width>0</width>
+              <width>80</width>
               <height>0</height>
              </size>
             </property>
@@ -1269,12 +1269,7 @@ background-color: rgb(0, 0, 0);</string>
             </property>
             <item>
              <property name="text">
-              <string>Linear</string>
-             </property>
-            </item>
-            <item>
-             <property name="text">
-              <string>Logistic</string>
+              <string>EMMA</string>
              </property>
             </item>
            </widget>
@@ -2837,7 +2832,7 @@ background-color: rgb(0, 0, 0);</string>
       <x>10</x>
       <y>20</y>
       <width>161</width>
-      <height>511</height>
+      <height>531</height>
      </rect>
     </property>
     <property name="sizePolicy">
@@ -2861,7 +2856,7 @@ background-color: rgb(0, 0, 0);</string>
        <x>0</x>
        <y>0</y>
        <width>151</width>
-       <height>515</height>
+       <height>521</height>
       </rect>
      </property>
      <layout class="QGridLayout" name="gridLayout_3">

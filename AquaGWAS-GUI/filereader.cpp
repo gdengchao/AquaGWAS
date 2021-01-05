@@ -176,7 +176,7 @@ bool FileReader::makeAvinputAndSnpposFile(QString vcfFilePath, QString pvalFileP
     QTextStream vcfFileStream(&vcfFile);
     QTextStream avinputFileStream(&avinputFile);
     QTextStream snpPosFileStream(&snpPosFile);
-    while (!vcfFile.atEnd())
+    while (!vcfFileStream.atEnd())
     {
         QString curLine = vcfFileStream.readLine();
         if (curLine[0] == '#')
@@ -516,45 +516,71 @@ bool FileReader::completeFIDofPed(QString fidFilePath, QString pedFilePath)
  * @param keepFilePath
  * @return
  */
-bool FileReader::filterSNPByChrFromMap(QString mapFilePath, QString chrListFilePath, QString snpListFilePath)
+bool FileReader::filterSNPByChr(QString filePath, QString chrListFilePath, QString snpListFilePath)
 {
-    if (mapFilePath.isNull() || chrListFilePath.isNull() || snpListFilePath.isNull())
+    if (filePath.isNull() || chrListFilePath.isNull() || snpListFilePath.isNull())
     {
         return false;
     }
 
+    QFile file(filePath);
     QFile chrListFile(chrListFilePath);
-    QFile mapFile(mapFilePath);
     QFile snpListFile(snpListFilePath);
 
     //    bool a  = chrListFile.open(QIODevice::ReadOnly);
     //    bool b = mapFile.open(QIODevice::ReadOnly);
     //    bool c = snpListFile.open(QIODevice::WriteOnly);
     if (!chrListFile.open(QIODevice::ReadOnly) ||
-            !mapFile.open(QIODevice::ReadOnly) ||
+            !file.open(QIODevice::ReadOnly) ||
             !snpListFile.open(QIODevice::ReadWrite))
     {
         return false;
     }
 
-    QTextStream mapFileStream(&mapFile);
+    QFileInfo fileInfo(file);
+    QString suffix = fileInfo.suffix();
+
+    int snpIndex = -1;
+
+    if (suffix == "vcf")
+    {
+        snpIndex = 2;
+    }
+    else if (suffix == "map")
+    {
+        snpIndex = 1;
+    }
+    else if (suffix == "bim")
+    {
+        snpIndex = 1;
+    }
+    else if(suffix == "tped")
+    {
+        snpIndex = 1;
+    }
+    else
+    {
+        return false;
+    }
+
+    QTextStream fileStream(&file);
     QTextStream snpListFileStream(&snpListFile);
     QTextStream chrListFileStream(&chrListFile);
-    QStringList chrList = chrListFileStream.readAll().split("\n");
+    QStringList chrList = chrListFileStream.readAll().split("\n", QString::SkipEmptyParts);
     chrList.removeDuplicates();
 
-    while (!mapFileStream.atEnd())
+    while (!fileStream.atEnd())
     {
-        QString curLine = mapFileStream.readLine();
+        QString curLine = fileStream.readLine();
         QStringList curLineList = curLine.split(QRegExp("\\s+"), QString::SkipEmptyParts);
         if (chrList.indexOf(curLineList[0]) != -1)
         {
-            snpListFileStream << curLine << endl;
+            snpListFileStream << curLineList[snpIndex] << endl;
         }
     }
 
     chrListFile.close();
-    mapFile.close();
+    file.close();
     snpListFile.close();
     return true;
 }
@@ -563,6 +589,7 @@ bool FileReader::filterSNPByChrFromMap(QString mapFilePath, QString chrListFileP
  * @brief FileReader::modifyChr
  *      Hicam0 --> 0; Avoid error of gcta.(Modify original file)
  * @param file
+ *      The first column is Chr.
  * @return
  */
 bool FileReader::modifyChr(QString filePath)
@@ -582,21 +609,29 @@ bool FileReader::modifyChr(QString filePath)
     QTextStream srcFileStream(&file);
     QTextStream tmpFileStream(&tmpFile);
 
-    while (!file.atEnd())
+    int curLineNum = 0;
+    while (!srcFileStream.atEnd())
     {
-        QStringList curLineList = srcFileStream.readLine().split(QRegExp("\\s+"), QString::SkipEmptyParts);
-//        QString tmp = curLineList[0];
+        QString curLine = srcFileStream.readLine();
+        QStringList curLineList = curLine.split("\t", QString::SkipEmptyParts);
+        curLineNum ++;
         if (curLineList[0].toLower().indexOf(QRegExp("^(chr)?\\d+")) != -1)
         {
             tmpFile.remove();
+            qDebug() << "No matching: " << curLineNum << "\t" << curLineList[0];
             return true;
         }
         QRegExp regExp(".*([0-9]+)");
         int pos = regExp.indexIn(curLineList[0]);
+        if (pos < 0)
+        {
+            qDebug() << "Pos less than 0.";
+            return false;
+        }
         QStringList list = regExp.capturedTexts();
-//        QString strA = regExp.cap(1);
+        qDebug() << curLineNum << "\t" << curLineList.join("\t");
         curLineList[0] = regExp.cap(1);
-        tmpFileStream << curLineList.join(" ") << endl;
+        tmpFileStream << curLineList.join("\t") << endl;
     }
 
     file.remove();
@@ -622,9 +657,9 @@ bool FileReader::modifyChr(QString srcFilePath, QString dstFilePath)
     QTextStream srcFileStream(&srcFile);
     QTextStream dstFileStream(&dstFile);
 
-    while (!srcFile.atEnd())
+    while (!srcFileStream.atEnd())
     {
-        QStringList curLineList = srcFileStream.readLine().split(QRegExp("\\s+"), QString::SkipEmptyParts);
+        QStringList curLineList = srcFileStream.readLine().split("\t", QString::SkipEmptyParts);
 
         if (curLineList[0].toLower().indexOf(QRegExp("^(chr)?\\d+")) != -1)
         {
@@ -632,10 +667,15 @@ bool FileReader::modifyChr(QString srcFilePath, QString dstFilePath)
         }
         QRegExp regExp(".*([0-9]+)");
         int pos = regExp.indexIn(curLineList[0]);
+        if (pos < 0)
+        {
+            qDebug() << "Pos less than 0.";
+            return false;
+        }
         QStringList list = regExp.capturedTexts();
 //        QString strA = regExp.cap(1);
         curLineList[0] = regExp.cap(1);
-        dstFileStream << curLineList.join(" ") << endl;
+        dstFileStream << curLineList.join("\t") << endl;
     }
 
     return true;
@@ -705,11 +745,12 @@ bool FileReader::completeSnpID(QString filePath)
     QTextStream fileStream(&file);
     QTextStream tmpFileStream(&tmpFile);
 
-    while (!file.atEnd())
+    while (!fileStream.atEnd())
     {
         QString curLine = fileStream.readLine();
         if (curLine[0] == "#")
         {
+            tmpFileStream << curLine << endl;
             continue;
         }
         QStringList curLineList = curLine.split("\t", QString::SkipEmptyParts);

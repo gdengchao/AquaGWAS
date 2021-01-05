@@ -2,7 +2,7 @@
 
 Gemma::Gemma()
 {
-    this->model << "LMM" /*<< "BSLMM"*/;    // Hide the function of BSLMM.
+    this->model << "LMM" << "BSLMM";    // Hide the function of BSLMM.
     this->paramlist.clear();
 }
 

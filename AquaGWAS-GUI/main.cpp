@@ -126,15 +126,15 @@ int main(int argc, char *argv[])
     //    fileReader.completeTfamFromPheno("/mnt/my_share/dchao/data/test_data/test_data/phenotmp.txt", "/mnt/my_share/dchao/data/test_data/test_data/test.tfam");
 
 //    fileReader.filterSNPByChrFromMap("/mnt/my_share/dchao/test/snp_1059.map", "/mnt/my_share/dchao/test/list_for_chr", "/mnt/my_share/dchao/test/list_for_snp_2");
-//    fileReader.modifyChr("/mnt/my_share/dchao/a");
+//    FileReader fileReader;
+//    fileReader.modifyChr("/mnt/my_share/dchao/data/GWAS_data/input1/abalone1059-miss0_tmp_fc.bim");
+//    fileReader.completeSnpID("/mnt/my_share/dchao/a.vcf");
 
 
-    FileReader fileReader;
-    fileReader.completeSnpID("/mnt/my_share/dchao/a.vcf");
 
-//    MainWindow w;
-//    w.show();
+    MainWindow w;
+    w.show();
 
-//    return a.exec();
+    return a.exec();
 
 }

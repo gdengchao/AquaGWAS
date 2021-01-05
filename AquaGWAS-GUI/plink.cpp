@@ -20,7 +20,7 @@ bool Plink::vcf2plink(QString vcfFile, QString out, QString maf, QString mind, Q
     this->paramlist.append(vcfFile);
     this->paramlist.append("--allow-extra-chr");
     this->paramlist.append("--allow-no-sex");
-    this->paramlist.append("--const-fid");
+//    this->paramlist.append("--const-fid");
     if (!maf.isNull())
     {
         this->paramlist.append("--maf");
@@ -59,7 +59,7 @@ bool Plink::vcf2binary(QString vcfFile, QString out, QString maf, QString mind, 
     this->paramlist.append(vcfFile);
     this->paramlist.append("--allow-extra-chr");
     this->paramlist.append("--allow-no-sex");
-    this->paramlist.append("--const-fid");
+//    this->paramlist.append("--const-fid");
     if (!maf.isNull())
     {
         this->paramlist.append("--maf");
@@ -96,7 +96,7 @@ bool Plink::vcf2transpose(QString vcfFile, QString out, QString maf, QString min
     this->paramlist.append(vcfFile);
     this->paramlist.append("--allow-extra-chr");
     this->paramlist.append("--allow-no-sex");
-    this->paramlist.append("--const-fid");
+//    this->paramlist.append("--const-fid");
     if (!maf.isNull())
     {
         this->paramlist.append("--maf");
@@ -390,7 +390,7 @@ void Plink::linkageFilter(QString genotype, QString map,
     this->paramlist.clear();            // Clear paramlist before set parameter.
     if (isVcfFile(genotype)) // Transform "vcf" to "transpose"
     {
-        this->paramlist.append("--const-fid");
+//        this->paramlist.append("--const-fid");
         this->paramlist.append("--vcf");
         this->paramlist.append(genotype);
     }
@@ -447,7 +447,7 @@ void Plink::extractBySnpNameFile(QString genotype, QString map, QString snpIDFil
     this->paramlist.clear();            // Clear paramlist before set parameter.
     if (isVcfFile(genotype)) // Transform "vcf" to "transpose"
     {
-        this->paramlist.append("--const-fid");
+//        this->paramlist.append("--const-fid");
         this->paramlist.append("--vcf");
         this->paramlist.append(genotype);
     }
@@ -538,7 +538,7 @@ bool Plink::runGWAS(QString phenotype, QString genotype, QString map, QString co
     this->paramlist.clear();            // Clear paramlist before set parameter.
     if (isVcfFile(genotype)) // Transform "vcf" to "transpose"
     {
-        this->paramlist.append("--const-fid");
+//        this->paramlist.append("--const-fid");
         this->paramlist.append("--vcf");
         this->paramlist.append(genotype);
     }
