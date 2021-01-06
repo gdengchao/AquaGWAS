@@ -489,7 +489,7 @@ bool FuncAnnotator::complFuncAnnoInfo(QString const exonicPosFilePath, QString n
     {
         while (!baseFileStream.atEnd())
         {
-            QStringList curLine = baseFileStream.readLine().split(QRegExp("\\s+"), QString::SkipEmptyParts);
+            QStringList curLine = baseFileStream.readLine().split("\t", QString::SkipEmptyParts);
             //        QString id = curLine[0].replace('T', 'G');      // Transcript ID to Gene ID.
             QString id = curLine[0];
             curLine.removeFirst();

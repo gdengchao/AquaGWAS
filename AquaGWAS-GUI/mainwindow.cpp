@@ -2518,9 +2518,9 @@ void MainWindow::on_pcaRunPushButton_clicked()
                 file.remove(snplistFile);
                 if (binaryFile != genoFileAbPath + "/" + genoFileBaseName)
                 {
-//                    file.remove(binaryFile+".bed");
-//                    file.remove(binaryFile+".bim");
-//                    file.remove(binaryFile+".fam");
+                    file.remove(binaryFile+".bed");
+                    file.remove(binaryFile+".bim");
+                    file.remove(binaryFile+".fam");
                 }
                 file.remove(binaryFile+".nosex");
                 file.remove(binaryFile+".log");
@@ -2569,9 +2569,9 @@ void MainWindow::on_pcaRunPushButton_clicked()
             QFile file;
             if ((transformFileFlag || filterDataFlag) && binaryFile+".bed" != fileReader->getGenotypeFile())
             {
-//                file.remove(binaryFile+".bed");
-//                file.remove(binaryFile+".bim");
-//                file.remove(binaryFile+".fam");
+                file.remove(binaryFile+".bed");
+                file.remove(binaryFile+".bim");
+                file.remove(binaryFile+".fam");
                 file.remove(binaryFile+".nosex");
             }
             file.remove(binaryFile+".grm.bin");

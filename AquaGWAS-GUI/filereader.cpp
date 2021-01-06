@@ -251,10 +251,10 @@ bool FileReader::completeTfamFromPheno(QString phenoFilePath, QString tfamFilePa
     QTextStream tmpTfamFileStream(&tmpTfamFile);
 
     QMap<QString, QString> fidMap;
-    QStringList fidInfo = phenoFileStream.readAll().split("\n");
+    QStringList fidInfo = phenoFileStream.readAll().split("\n", QString::SkipEmptyParts);
     for (auto line : fidInfo)
     {
-        QStringList curLineList = line.split(QRegExp("\\s+"));
+        QStringList curLineList = line.split(QRegExp("\\s+"), QString::SkipEmptyParts);
         if (curLineList.length() >= 2)
         {
             fidMap[curLineList[1]] = curLineList[0];
@@ -313,10 +313,10 @@ bool FileReader::completePedFromPheno(QString phenoFilePath, QString pedFilePath
     QTextStream tmpPedFileStream(&tmpPedFile);
 
     QMap<QString, QString> fidMap;
-    QStringList fidInfo = phenoFileStream.readAll().split("\n");
+    QStringList fidInfo = phenoFileStream.readAll().split("\n", QString::SkipEmptyParts);
     for (auto line : fidInfo)
     {
-        QStringList curLineList = line.split(QRegExp("\\s+"));
+        QStringList curLineList = line.split(QRegExp("\\s+"), QString::SkipEmptyParts);
         if (curLineList.length() >= 2)
         {
             fidMap[curLineList[1]] = curLineList[0];
@@ -379,10 +379,10 @@ bool FileReader::completeFIDofTfam(QString fidFilePath, QString tfamFilePath)
     QTextStream tmpTfamFileStream(&tmpTfamFile);
 
     QMap<QString, QStringList> fidMap;
-    QStringList fidInfo = fidFileStream.readAll().split("\n");
+    QStringList fidInfo = fidFileStream.readAll().split("\n", QString::SkipEmptyParts);
     for (auto line : fidInfo)
     {
-        QStringList curLineList = line.split(QRegExp("\\s+"));
+        QStringList curLineList = line.split(QRegExp("\\s+"), QString::SkipEmptyParts);
         if (curLineList.length() >= 2 && curLineList.length() < 5)
         {
             fidMap[curLineList[1]] = QStringList() << curLineList[0];
@@ -460,10 +460,10 @@ bool FileReader::completeFIDofPed(QString fidFilePath, QString pedFilePath)
     QTextStream tmpPedFileStream(&tmpPedFile);
 
     QMap<QString, QStringList> fidMap;
-    QStringList fidInfo = fidFileStream.readAll().split("\n");
+    QStringList fidInfo = fidFileStream.readAll().split("\n", QString::SkipEmptyParts);
     for (auto line : fidInfo)
     {
-        QStringList curLineList = line.split(QRegExp("\\s+"));
+        QStringList curLineList = line.split(QRegExp("\\s+"), QString::SkipEmptyParts);
         if (curLineList.length() >= 2 && curLineList.length() < 5)
         {
             fidMap[curLineList[1]] = QStringList() << curLineList[0];
