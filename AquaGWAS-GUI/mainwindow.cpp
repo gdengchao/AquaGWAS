@@ -174,13 +174,20 @@ void MainWindow::cmdGWASButton_clicked()
     QString sgExpo = ui->sgExpoLineEdit->text();
 
     QString cmdlist;
+
     if(tool=="gemma")
     {
         QMap<QString, QString> moreParam = this->gemmaParamWidget->getCurrentParam();
         //  QString cmdlist;
+        //correct p-value
+        QString correctionType = this->emmaxParamWidget->getCorrectionType();
+        if(correctionType=="")
+        {
+            correctionType="no";
+        }
 
         cmdlist.append("-A -T "+tool+" -M "+model+" --name "+name+" -p "+phenotype+" --kinmatrix_gemma "+moreParam["kinmatrix"]
-                +" -g "+genotype+" -o "+out);
+                +" -g "+genotype+" -o "+out+" --makekin_gemma "+moreParam["makekin"]+" --correction "+correctionType);
         if(model=="LMM")
         {
             cmdlist.append(" --lmmtest " +moreParam["lmmtest"]);
@@ -205,7 +212,7 @@ void MainWindow::cmdGWASButton_clicked()
             cmdlist.append(" --geno "+geno);
         }
 
-        //  emit runningMsgWidgetAppendText(cmdlist);
+
 
 
     }
@@ -238,9 +245,17 @@ void MainWindow::cmdGWASButton_clicked()
     {
 
         QMap<QString, QString> moreParam = this->emmaxParamWidget->getCurrentParam();
+        //correct p-value
+        QString correctionType = this->emmaxParamWidget->getCorrectionType();
+        if(correctionType=="")
+        {
+            correctionType="no";
+        }
         //  QString cmdlist;
+
         cmdlist.append("-A -T "+tool+" --name "+name+" -M "+model+" -p "+phenotype
-                       +" -g "+genotype+" -o "+out+" --kinmatrix_emmax "+moreParam["kinmatrix"]);
+                       +" -g "+genotype+" -o "+out+" --makekin_emmax "+moreParam["makekin"]+" --kinmatrix_emmax "+moreParam["kinmatrix"]
+                +" --correction "+correctionType);
         if(!kinship.isNull())
         {
             cmdlist.append(" -k "+kinship);
@@ -266,6 +281,13 @@ void MainWindow::cmdGWASButton_clicked()
 
     }
     cmdlist.append(" --gwBase "+gwBase+" --gwExpo "+gwExpo+" --sgBase "+sgBase+" --sgExpo "+sgExpo);
+    if (qualityControl->isLinkageFilterNeeded())//如果QC小窗选了yes，则要产生相应的命令
+    {
+        QString winSize, stepLen, r2Threshold;
+        this->qualityControl->getLinkageFilterType(winSize, stepLen, r2Threshold);
+        cmdlist.append(" --qualityControl_SNPlinkage");
+        cmdlist.append(" --qualityControl_Windowsize "+winSize+" --qualityControl_StepLength "+stepLen+" --qualityControl_r2threshold "+r2Threshold);
+    }
     emit runningMsgWidgetClearText();
     emit runningMsgWidgetAppendText(cmdlist);
     // -A -T emmax --name pro2 -M EMMA -p /home/zhi/Desktop/data_renhao/sex.phe -g /home/zhi/Desktop/data_renhao/y2.tped
@@ -274,7 +296,7 @@ void MainWindow::cmdGWASButton_clicked()
     this->runningFlag = false;
 }
 
-void MainWindow::pca_ld_cmdButton_clicked()
+void MainWindow::pca_ld_cmdButton_clicked()//当点击pca/ld界面的cmdgenerate按键后，要产生对应的命令
 {
 
     if (this->runningFlag)
@@ -306,6 +328,28 @@ void MainWindow::pca_ld_cmdButton_clicked()
     PCAcmdlist.append("--pca ");
     PCAcmdlist.append("--name "+name);
     PCAcmdlist.append(" -g "+genotype+" --PCs "+PCs+" --threads "+Threads+" -o "+out);
+    if (qualityControl->isLinkageFilterNeeded())//如果QC小窗选了yes，则要产生相应的命令
+    {
+        QString winSize, stepLen, r2Threshold;
+        this->qualityControl->getLinkageFilterType(winSize, stepLen, r2Threshold);
+        PCAcmdlist.append(" --qualityControl_SNPlinkage");
+        PCAcmdlist.append(" --qualityControl_Windowsize "+winSize+" --qualityControl_StepLength "+stepLen+" --qualityControl_r2threshold "+r2Threshold);
+    }
+    //检查filterchr框是否被选中
+    bool filterChrFlag = ui->filterChrRadioButton->isChecked();
+    if (filterChrFlag)
+    {
+        QString listForChr = ui->filterChrFileLineEdit->text();
+        PCAcmdlist.append(" --FilterChr "+listForChr);
+    }
+    //检查fidcomplete框是否被选中
+    bool completeFidFlag = ui->compleFIDRadioButton->isChecked();
+    if (completeFidFlag)
+    {
+        QString fidFile = ui->fidFileLineEdit->text();
+        PCAcmdlist.append(" --FIDComplete "+fidFile);
+    }
+
 
     QString LDcmdlist;
     LDcmdlist.append("--LD ");
@@ -334,6 +378,28 @@ void MainWindow::pca_ld_cmdButton_clicked()
         PCAcmdlist.append(" --geno " + geno);
         LDcmdlist.append(" --geno " + geno);
     }
+    if (qualityControl->isLinkageFilterNeeded())//如果QC小窗选了yes，则要产生相应的命令
+    {
+        QString winSize, stepLen, r2Threshold;
+        this->qualityControl->getLinkageFilterType(winSize, stepLen, r2Threshold);
+        LDcmdlist.append(" --qualityControl_SNPlinkage");
+        LDcmdlist.append(" --qualityControl_Windowsize "+winSize+" --qualityControl_StepLength "+stepLen+" --qualityControl_r2threshold "+r2Threshold);
+    }
+    //检查filterchr框是否被选中
+    filterChrFlag = ui->filterChrRadioButton->isChecked();
+    if (filterChrFlag)
+    {
+        QString listForChr = ui->filterChrFileLineEdit->text();
+        LDcmdlist.append(" --FilterChr "+listForChr);
+    }
+    //检查fidcomplete框是否被选中
+    completeFidFlag = ui->compleFIDRadioButton->isChecked();
+    if (completeFidFlag)
+    {
+        QString fidFile = ui->fidFileLineEdit->text();
+        LDcmdlist.append(" --FIDComplete "+fidFile);
+    }
+
 
     emit runningMsgWidgetClearText();
     emit runningMsgWidgetAppendText("PCA:");
