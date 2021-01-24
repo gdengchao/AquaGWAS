@@ -6,6 +6,13 @@ Emmax::Emmax()
     this->paramlist.clear();
 }
 
+/**
+ * @brief Emmax::makeKinship
+ *          make kinship file.
+ * @param genotype  genotype file path.
+ * @param moreParam parameters read from EmmaxParamWidget.
+ * @return
+ */
 bool Emmax:: makeKinship(QString genotype, QString kinmat)
 {
     if (genotype.isNull())
@@ -31,7 +38,17 @@ bool Emmax:: makeKinship(QString genotype, QString kinmat)
     return true;
 }
 
-// genotype must be the prefix of tped/fam file.
+/**
+ * @brief Emmax::runGWAS
+ *          set practical GWAS parameters of emmax.
+ * @param genotype          the prefix(whole path) of tped/fam file.
+ * @param phenotype         the path of phenotype file.
+ * @param covariate         the path of covariate file.
+ * @param kinship           the path of kinship file.
+ * @param out               the prefix(whole path) of out file.
+ * @param moreParam         parameters read from EmmaxParamWidget.
+ * @return
+ */
 bool Emmax::runGWAS(QString genotype, QString phenotype, QString covariate, QString kinship,
                     QString out, QString kinmat)
 {
@@ -79,5 +96,4 @@ bool Emmax::runGWAS(QString genotype, QString phenotype, QString covariate, QStr
 
     return true;
 }
-
 

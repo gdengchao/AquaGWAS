@@ -2,7 +2,7 @@
 
 Gemma::Gemma()
 {
-    this->model << "LMM" << "BSLMM";
+    this->model << "LMM" << "BSLMM";    // Hide the function of BSLMM.
     this->paramlist.clear();
 }
 
@@ -13,9 +13,9 @@ Gemma::Gemma()
  * @return
  */
 bool Gemma:: makeKinship(QString binGenoBaseName, QString out, QString kinship_type)
-{  //生成矩阵需要相应的二进制文件，而整个gwas过程中，真正使用的二进制文件都是代码生成的带有tmp字样的临时二进制文件
-   //无论输入的是vcf等非二进制格式还是bed二进制格式，最终都生成例如：hapmap_tmp.bed hapmap_tmp.fam hapmap_tmp.bim这样的二进制文件
-   //所以传入的binGenoBaseName为hapmap_tmp 这样的字符串 以此来选中所有相同命名的二进制文件
+{   //生成矩阵需要相应的二进制文件，而整个gwas过程中，真正使用的二进制文件都是代码生成的带有tmp字样的临时二进制文件
+    //无论输入的是vcf等非二进制格式还是bed二进制格式，最终都生成例如：hapmap_tmp.bed hapmap_tmp.fam hapmap_tmp.bim这样的二进制文件
+    //所以传入的binGenoBaseName为hapmap_tmp 这样的字符串 以此来选中所有相同命名的二进制文件
     if (binGenoBaseName.isNull() || out.isNull())
     {
         return false;
@@ -29,8 +29,7 @@ bool Gemma:: makeKinship(QString binGenoBaseName, QString out, QString kinship_t
     this->paramlist.append("-gk");
     this->paramlist.append(kinship_type);
     this->paramlist.append("-o");
-    this->paramlist.append(out);   //这里生成的矩阵的文件名就是类似 hapmap_tmp
-
+    this->paramlist.append(out);
 
     return true;
 }
@@ -46,18 +45,18 @@ bool Gemma:: makeKinship(QString binGenoBaseName, QString out, QString kinship_t
  * @return
  */
 bool Gemma::runGWAS(QString binGenoBaseName, QString phenotype, QString covariate, QString kinship,
-                    QString out, QString model, QString lmmtest ,QString bslmmmodel)
+                    QString out, QString model,QString lmmtest ,QString bslmmmodel)
 {
     this->paramlist.clear();            // Clear paramlist before set parameter.
-    if (binGenoBaseName.isNull() || phenotype.isNull() || kinship.isNull() || model.isNull())
+    if (binGenoBaseName.isNull() || phenotype.isNull() || model.isNull())
     {
         if (phenotype.isNull())
         {
-            return false;
+            std:: cout << "Error,A Phenotype File is Needed!    "<<std::endl;
         }
         if (binGenoBaseName.isNull())
         {
-            return false;
+            std:: cout << "Error, A Transpose File is Needed!    "<<std::endl;
         }
         return false;
     }
@@ -75,8 +74,8 @@ bool Gemma::runGWAS(QString binGenoBaseName, QString phenotype, QString covariat
         this->paramlist.append("2");
         if (!covariate.isNull())    // Can't for BSLMM
         {
-//            this->paramlist.append("-c");
-//            this->paramlist.append(covariate);
+            this->paramlist.append("-c");
+            this->paramlist.append(covariate);
         }
     }
 
@@ -94,6 +93,12 @@ bool Gemma::runGWAS(QString binGenoBaseName, QString phenotype, QString covariat
     return true;
 }
 
+/**
+ * @brief Gemma::phe_fam_Preparation
+ * @param phe                           phenotype file path
+ * @param fam                           .fam file path
+ * @return
+ */
 bool Gemma::phe_fam_Preparation(QString phe, QString fam)
 {   // Replace "NA" to "-9", then complete .fam
     // .fam: FID IID PID MID Sex 1 Phe  (phenotype data to the 7th column of .fam)
@@ -128,34 +133,35 @@ bool Gemma::phe_fam_Preparation(QString phe, QString fam)
         QString pheCurLine = pheStream.readLine();
         // Replace "NA" to "-9"
         QStringList pheCurLineList = pheCurLine.replace("NA", "-9").split(QRegExp("\\s+"), QString::SkipEmptyParts);
-       // Split by space(s)
+        // Split by space(s)
         QStringList famCurLineList = famCurLine.split(QRegExp("\\s+"), QString::SkipEmptyParts);
 
         while (famCurLineList.length() > 5)
-        {   // Only hold the first 5 columns.(FID IIF PID MID Sex)
+        {   // Only retain the first 5 columns.(FID IIF PID MID Sex)
             famCurLineList.removeLast();
         }
 
         // .fam: FID IID PID MID Sex 1 Phe  (phenotype data to the 7th column of .fam)
-        tmpFamStream << famCurLineList.join("\t") << "\t1\t"  << pheCurLineList[pheCurLineList.length()-1] << "\n";
-                                                    // \t1\t就是填充一列的1 \t是tab
-        qApp->processEvents();  // Avoid no responding of MainWindow.
+        tmpFamStream << famCurLineList.join("\t") << "\t1\t" /*"\t"*/
+                     << pheCurLineList[pheCurLineList.length()-1] << "\n";
     }
 
     if (!pheStream.atEnd() || !famStream.atEnd())
     {   // Not end synchronously.
         return false;
     }
+
     // Close file finally.
     pheFile.close();
     famFile.close();
     tmpFamFile.close();
 
-    famFile.remove();// remove original file.
+    famFile.remove();   // remove original file.
     // Rename new file to original file name.
     if (!tmpFamFile.rename(tmpFamFileAbFilePath, famFileAbPath+"/"+famFileName))
     {
         return false;
     }
+
     return true;
 }

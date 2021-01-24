@@ -19,6 +19,8 @@ bool Plink::vcf2plink(QString vcfFile, QString out, QString maf, QString mind, Q
     this->paramlist.append("--vcf");
     this->paramlist.append(vcfFile);
     this->paramlist.append("--allow-extra-chr");
+    this->paramlist.append("--allow-no-sex");
+//    this->paramlist.append("--const-fid");
     if (!maf.isNull())
     {
         this->paramlist.append("--maf");
@@ -56,6 +58,8 @@ bool Plink::vcf2binary(QString vcfFile, QString out, QString maf, QString mind, 
     this->paramlist.append("--vcf");
     this->paramlist.append(vcfFile);
     this->paramlist.append("--allow-extra-chr");
+    this->paramlist.append("--allow-no-sex");
+//    this->paramlist.append("--const-fid");
     if (!maf.isNull())
     {
         this->paramlist.append("--maf");
@@ -91,6 +95,8 @@ bool Plink::vcf2transpose(QString vcfFile, QString out, QString maf, QString min
     this->paramlist.append("--vcf");
     this->paramlist.append(vcfFile);
     this->paramlist.append("--allow-extra-chr");
+    this->paramlist.append("--allow-no-sex");
+//    this->paramlist.append("--const-fid");
     if (!maf.isNull())
     {
         this->paramlist.append("--maf");
@@ -132,6 +138,7 @@ bool Plink::plink2transpose(QString pedFile, QString mapFile, QString out, QStri
     this->paramlist.append("--map");
     this->paramlist.append(mapFile);
     this->paramlist.append("--allow-extra-chr");
+    this->paramlist.append("--allow-no-sex");
     if (!maf.isNull())
     {
         this->paramlist.append("--maf");
@@ -174,6 +181,7 @@ bool Plink::plink2binary(QString pedFile, QString mapFile, QString out, QString 
     this->paramlist.append("--map");
     this->paramlist.append(mapFile);
     this->paramlist.append("--allow-extra-chr");
+    this->paramlist.append("--allow-no-sex");
     if (!maf.isNull())
     {
         this->paramlist.append("--maf");
@@ -212,6 +220,7 @@ bool Plink::transpose2binary(QString tpedFile, QString tfamFile, QString out, QS
     this->paramlist.append("--tfam");
     this->paramlist.append(tfamFile);
     this->paramlist.append("--allow-extra-chr");
+    this->paramlist.append("--allow-no-sex");
     if (!maf.isNull())
     {
         this->paramlist.append("--maf");
@@ -250,6 +259,7 @@ bool Plink::transpose2plink(QString tpedFile, QString tfamFile, QString out, QSt
     this->paramlist.append("--tfam");
     this->paramlist.append(tfamFile);
     this->paramlist.append("--allow-extra-chr");
+    this->paramlist.append("--allow-no-sex");
     if (!maf.isNull())
     {
         this->paramlist.append("--maf");
@@ -294,6 +304,7 @@ bool Plink::binary2transpose(QString binaryFile, QString out, QString maf, QStri
     this->paramlist.append("--bfile");
     this->paramlist.append(binaryFile);
     this->paramlist.append("--allow-extra-chr");
+    this->paramlist.append("--allow-no-sex");
     if (!maf.isNull())
     {
         this->paramlist.append("--maf");
@@ -342,6 +353,7 @@ bool Plink::binary2plink(QString binaryFile, QString out, QString maf, QString m
     this->paramlist.append("--bfile");
     this->paramlist.append(binaryFile);
     this->paramlist.append("--allow-extra-chr");
+    this->paramlist.append("--allow-no-sex");
     if (!maf.isNull())
     {
         this->paramlist.append("--maf");
@@ -378,6 +390,7 @@ void Plink::linkageFilter(QString genotype, QString map,
     this->paramlist.clear();            // Clear paramlist before set parameter.
     if (isVcfFile(genotype)) // Transform "vcf" to "transpose"
     {
+//        this->paramlist.append("--const-fid");
         this->paramlist.append("--vcf");
         this->paramlist.append(genotype);
     }
@@ -413,6 +426,7 @@ void Plink::linkageFilter(QString genotype, QString map,
 
     // plink1.9 --file 222_filter1 --allow-extra-chr --indep-pairwise 100 5 0.5 --out ldfl
     this->paramlist.append("--allow-extra-chr");
+    this->paramlist.append("--allow-no-sex");
     this->paramlist.append("--indep-pairwise");
     this->paramlist.append(winSize);
     this->paramlist.append(stepLen);
@@ -421,7 +435,7 @@ void Plink::linkageFilter(QString genotype, QString map,
     this->paramlist.append(out);
 }
 
-void Plink::extractBySnpNameFile(QString genotype, QString map, QString snpIDFile, QString out)
+void Plink::extractBySnpNameFile(QString genotype, QString map, QString snpIDFile, QString outPath, QString outType)
 {
     // Genotype file info.
     QFileInfo genoFileInfo = QFileInfo(genotype);
@@ -433,6 +447,7 @@ void Plink::extractBySnpNameFile(QString genotype, QString map, QString snpIDFil
     this->paramlist.clear();            // Clear paramlist before set parameter.
     if (isVcfFile(genotype)) // Transform "vcf" to "transpose"
     {
+//        this->paramlist.append("--const-fid");
         this->paramlist.append("--vcf");
         this->paramlist.append(genotype);
     }
@@ -468,11 +483,33 @@ void Plink::extractBySnpNameFile(QString genotype, QString map, QString snpIDFil
 
     // plink1.9 --file 222_filter1 --allow-extra-chr --extract ldfl.prune.in --recode --out 222_filter1_ldfl
     this->paramlist.append("--allow-extra-chr");
+    this->paramlist.append("--allow-no-sex");
     this->paramlist.append("--extract");
     this->paramlist.append(snpIDFile);
-    this->paramlist.append("--recode");
+
+    if (outType == "binary")
+    {
+        this->paramlist.append("--make-bed");
+    }
+    else if (outType == "plink")
+    {
+        this->paramlist.append("--recode");
+    }
+    else if (outType == "transpose")
+    {
+        this->paramlist.append("--recode");
+        this->paramlist.append("12");
+        this->paramlist.append("transpose");
+        this->paramlist.append("--output-missing-genotype");
+        this->paramlist.append("0");
+    }
+    else if (outType == "vcf")
+    {
+        this->paramlist.append("--recode");
+        this->paramlist.append("vcf");
+    }
     this->paramlist.append("--out");
-    this->paramlist.append(out);
+    this->paramlist.append(outPath);
 }
 
 bool Plink::runGWAS(QString phenotype, QString genotype, QString map, QString covariate, QString kinship,
@@ -482,11 +519,11 @@ bool Plink::runGWAS(QString phenotype, QString genotype, QString map, QString co
     {
         if (phenotype.isNull())
         {
-//            QMessageBox::information(nullptr, "Error", "A Phenotype File is Needed!    ",   QMessageBox::Yes, QMessageBox::Yes);
+            std:: cout << "Error, A Phenotype File is Needed!    "<< std::endl;
         }
         if (genotype.isNull())
         {
-//            QMessageBox::information(nullptr, "Error", "A Genotype File is Needed!    ",   QMessageBox::Yes, QMessageBox::Yes);
+             std:: cout << "Error , A Genotype File is Needed!    "<<std::endl;
         }
         return false;
     }
@@ -501,6 +538,7 @@ bool Plink::runGWAS(QString phenotype, QString genotype, QString map, QString co
     this->paramlist.clear();            // Clear paramlist before set parameter.
     if (isVcfFile(genotype)) // Transform "vcf" to "transpose"
     {
+//        this->paramlist.append("--const-fid");
         this->paramlist.append("--vcf");
         this->paramlist.append(genotype);
     }
@@ -711,7 +749,7 @@ void Plink::filterData(QString genotype, QString map, QString maf, QString mind,
         return;
     }
 
-    QFileInfo genoFileInfo(genotype);
+    QFileInfo genoFileInfo(geno);
     QString genoFileBaseName = genoFileInfo.baseName();
     QString genoFileAbPath = genoFileInfo.absolutePath();
     QString genoFileSuffix = genoFileInfo.suffix();
@@ -728,7 +766,7 @@ void Plink::filterData(QString genotype, QString map, QString maf, QString mind,
 
     if (genoFileSuffix == "tped")
     {
-        this->filterPlinkFile(genotype, map, maf, mind, geno, out);
+        this->filterTransposeFile(genotype, map, maf, mind, geno, out);
     }
 
     if (genoFileSuffix == "bed")

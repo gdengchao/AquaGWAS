@@ -5,6 +5,12 @@ Gcta::Gcta()
 
 }
 
+/**
+ * @brief Gcta::makeGRM     Set practical parameters of GCTA to make .grm file.
+ * @param binGenoBaseName   binary genotype file base name(without suffix)
+ * @param out               out file path
+ * @return
+ */
 bool Gcta::makeGRM(QString binGenoBaseName, QString out)
 {
     if (binGenoBaseName.isNull() || out.isNull())

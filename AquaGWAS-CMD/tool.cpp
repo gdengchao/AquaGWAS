@@ -24,8 +24,3 @@ void Tool::setParam(QString param)
 {
     this->paramlist = param.split(QRegExp("\\s+"), QString::SkipEmptyParts);
 }
-
-//QString Tool::getToolPath()
-//{
-//    return this->toolpath;
-//}

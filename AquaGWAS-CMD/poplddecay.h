@@ -6,7 +6,7 @@
 #include <QTextStream>
 #include <QFileInfo>
 #include <QFile>
-#include <QCoreApplication>
+//#include <QApplication>
 
 class PopLDdecay : public Tool
 {

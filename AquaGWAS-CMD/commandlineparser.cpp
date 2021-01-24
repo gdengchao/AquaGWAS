@@ -28,7 +28,7 @@ void CommandLineParser::initCmdLineOption()
     this->addVersionOption();   //这里实际上就是调用 继承自Qcommandlineparser类的两个成员函数
     this->assocCmdOp = new QCommandLineOption(QStringList()  //这里是初始化一个qcommandlineoption类的对象把括号里的参数传给它的构造函数
                             << "A" << "assoc", "Run association analysis");//括号里参数的顺序按照name，description，valueName，defaultValue的顺序
-    this->pcaCmdOp = new QCommandLineOption(QStringList()
+    this->pcaCmdOp = new QCommandLineOption(QStringList()                   //valueName只是个形式而已，取什么名字都可以,它的存在就是告诉系统这个命令后面是带有参数的
                                << "pca" << "pca", "Run component analysis");
     this->gwBase =new QCommandLineOption(QStringList()
                           << "gwBase" , "set Genomewideline base(Manhattan plot)","gwBase","5");
@@ -72,6 +72,20 @@ void CommandLineParser::initCmdLineOption()
                                 << "PCs", "PCs(gcta)", "PCs", "");
     this->gcta_threadsCmdOp =  new QCommandLineOption(QStringList()
                                 << "threads", "threads(gcta)", "threads", "1");
+    this->gcta_threadsCmdOp =  new QCommandLineOption(QStringList()
+                                << "threads", "threads(gcta)", "threads", "1");
+    this->FilterChr_CmdOp =  new QCommandLineOption(QStringList()
+                                << "FilterChr", "whether filter chr", "FilterChr", "");
+    this->FIDComplete_CmdOp =  new QCommandLineOption(QStringList()
+                                << "FIDComplete", "whether complete FID", "valuename", "");
+    this->qualityControl_SNPlinkage =  new QCommandLineOption(QStringList()
+                                << "qualityControl_SNPlinkage", "whether SNP linkage");
+    this->qualityControl_StepLength =  new QCommandLineOption(QStringList()
+                                << "qualityControl_StepLength", "StepLength value", "valuename", "");
+    this->qualityControl_WindowSize =  new QCommandLineOption(QStringList()
+                                << "qualityControl_Windowsize", "WindowSize value", "valuename", "");
+    this->qualityControl_r2threshold =  new QCommandLineOption(QStringList()
+                                << "qualityControl_r2threshold", "r2threshold value", "valuename", "");
 
     this->toolCmdOp = new QCommandLineOption(QStringList()
                             << "T" << "tool", "Set association tool", "toolSelector", "");
@@ -96,7 +110,7 @@ void CommandLineParser::initCmdLineOption()
     this->mindCmdOp = new QCommandLineOption(QStringList()
                             << "mind", "Missingness of individual", "mind", "");
     this->gemma_makeKinCmdOp = new QCommandLineOption(QStringList()
-                            << "makekin_gemma", "whether Make kinship auto,1:yes 2:no(gemma)", "makekin", "1");
+                            << "makekin_gemma", "whether Make kinship auto yes/no (gemma)", "makekin", "yes");
     this->gemma_kinMatCmdOp = new QCommandLineOption(QStringList()
                             << "kinmatrix_gemma", "Kinship file type:1.centered relatedness matrix 2.standardized relatedness matrix(gemma)", "kinmatrix", "1");
     this->gemma_lmmTestCmdOp = new QCommandLineOption(QStringList()
@@ -116,10 +130,12 @@ void CommandLineParser::initCmdLineOption()
                  << "LDplot" , "whether plot the LD analysis result(yes/no)","LD_plot",""); //调用方式 --LDplot yes/no
     // linrenhao
     this->emmax_makeKinCmdOp = new QCommandLineOption(QStringList()
-                            <<  "makekin_emmax","Make kinship auto(emmax)", "makekin", "1");
+                            <<  "makekin_emmax","Make kinship auto(emmax)", "makekin", "");
     this->emmax_kinMatCmdOp = new QCommandLineOption(QStringList()
                             << "kinmatrix_emmax", "Kinship file type(emmax)", "kinmatrix", "BN");
-
+    // Correct p value
+    this->correction = new QCommandLineOption(QStringList()
+                 << "correction" , "select correctiontype","correction","");
     this->addOption(*assocCmdOp);
     this->addOption(*toolCmdOp);
     this->addOption(*modelCmdOp);       //这部分主要是添加选项命令到命令行中
@@ -159,12 +175,19 @@ void CommandLineParser::initCmdLineOption()
     this->addOption(*funcAnnoRef);
     this->addOption(*var);
     this->addOption(*exvar);
+    this->addOption(*qualityControl_SNPlinkage);
+    this->addOption(*qualityControl_StepLength);
+    this->addOption(*qualityControl_WindowSize);
+    this->addOption(*qualityControl_r2threshold);
+    this->addOption(*FilterChr_CmdOp);
+    this->addOption(*FIDComplete_CmdOp);
 
     this->addOption(*gwBase);
     this->addOption(*gwExpo);
     this->addOption(*sgBase);
     this->addOption(*sgExpo);
 
+    this->addOption(*correction);
 }
 
 void CommandLineParser::delCmdLineOption()
@@ -216,11 +239,46 @@ void CommandLineParser::delCmdLineOption()
     delete gwExpo;
     delete sgBase;
     delete gwExpo;
+    delete qualityControl_SNPlinkage;
+    delete qualityControl_StepLength;
+    delete qualityControl_WindowSize;
+    delete qualityControl_r2threshold;
+    delete FilterChr_CmdOp;
+    delete FIDComplete_CmdOp;
+
+    delete correction;
 }
 
 QHash<QString, QString> CommandLineParser::getArgsFromCmd()
 {
     QHash<QString, QString> argHash;
+    //质量控制的命令
+    if (this->isSet(*genoCmdOp) && this->value(*genoCmdOp).isNull())
+    {
+        throw invalid_argument("Invalid argument -- geno");
+    }
+    else if (this->isSet(*genoCmdOp) && !this->value(*genoCmdOp).isNull())
+    {
+        argHash["geno"] = this->value(*genoCmdOp);
+    }
+
+    if (this->isSet(*mindCmdOp) && this->value(*mindCmdOp).isNull())
+    {
+        throw invalid_argument("Invalid argument -- mind");
+    }
+    else if (this->isSet(*mindCmdOp) && !this->value(*mindCmdOp).isNull())
+    {
+        argHash["mind"] = this->value(*mindCmdOp);
+    }
+
+    if (this->isSet(*mafCmdOp) && this->value(*mafCmdOp).isNull())
+    {
+        throw invalid_argument("Invalid argument -- maf");
+    }
+    else if (this->isSet(*mafCmdOp) && !this->value(*mafCmdOp).isNull())
+    {
+        argHash["maf"] = this->value(*mafCmdOp);
+    }
 
     if (this->isSet(*assocCmdOp))  //检测用户是否设置了关联命令 若是则为true 执行if语句
     {   // Association analysis arguments.
@@ -280,6 +338,14 @@ QHash<QString, QString> CommandLineParser::getArgsFromCmd()
             argHash["ProjectName"] = this->value(*ProjectNameCmdOp);
         }
         // Allow to not set, but must have argument if set.
+        if (this->isSet(*correction) && this->value(*correction).isNull())
+        {
+            throw invalid_argument("Invalid argument --correction");
+        }
+        else if (this->isSet(*correction) && !this->value(*correction).isNull())
+        {
+            argHash["correction"] = this->value(*correction);
+        }
         if (this->isSet(*gwBase) && this->value(*gwBase).isNull())
         {
             throw invalid_argument("Invalid argument --gwBase");
@@ -344,13 +410,13 @@ QHash<QString, QString> CommandLineParser::getArgsFromCmd()
         // Gemma specific arguments.
         if (argHash["tool"] == "gemma")
         {
-            if (this->value(*gemma_makeKinCmdOp)=='0'||this->value(*gemma_makeKinCmdOp)=='1') //不管用户有没有设置 不是0就是1
+            if (this->value(*gemma_makeKinCmdOp)=="yes"||this->value(*gemma_makeKinCmdOp)=="no") //不管用户有没有设置 不是0就是1
             {
                 argHash["gemma_makekin"] = this->value(*gemma_makeKinCmdOp);//如果用户没有设置默认是1 有设置就按设置值来
             }
             else
             {
-                throw invalid_argument("Invalid argument --makekin please input 0 or 1");
+                throw invalid_argument("Invalid argument --makekin_gemma please input yes or no");
             }
 
             if (this->value(*gemma_kinMatCmdOp)=='1'||this->value(*gemma_kinMatCmdOp)=='2')//不管用户有没有设置不是1就是2
@@ -467,34 +533,8 @@ QHash<QString, QString> CommandLineParser::getArgsFromCmd()
         else if (this->isSet(*LD_plot) && !this->value(*LD_plot).isNull())
         {
             argHash["LD_plot"] = this->value(*LD_plot);
-        }
+        }      
 
-        if (this->isSet(*genoCmdOp) && this->value(*genoCmdOp).isNull())
-        {
-            throw invalid_argument("Invalid argument -- geno");
-        }
-        else if (this->isSet(*genoCmdOp) && !this->value(*genoCmdOp).isNull())
-        {
-            argHash["geno"] = this->value(*genoCmdOp);
-        }
-
-        if (this->isSet(*mindCmdOp) && this->value(*mindCmdOp).isNull())
-        {
-            throw invalid_argument("Invalid argument -- mind");
-        }
-        else if (this->isSet(*mindCmdOp) && !this->value(*mindCmdOp).isNull())
-        {
-            argHash["mind"] = this->value(*mindCmdOp);
-        }
-
-        if (this->isSet(*mafCmdOp) && this->value(*mafCmdOp).isNull())
-        {
-            throw invalid_argument("Invalid argument -- maf");
-        }
-        else if (this->isSet(*mafCmdOp) && !this->value(*mafCmdOp).isNull())
-        {
-            argHash["maf"] = this->value(*mafCmdOp);
-        }
     }
     if (this->isSet(*pcaCmdOp))
       {
@@ -560,34 +600,6 @@ QHash<QString, QString> CommandLineParser::getArgsFromCmd()
              argHash["kinFile"] = this->value(*kinFileCmdOp);
          }
 
-         if (this->isSet(*genoCmdOp) && this->value(*genoCmdOp).isNull())
-         {
-             throw invalid_argument("Invalid argument -- geno");
-         }
-         else if (this->isSet(*genoCmdOp) && !this->value(*genoCmdOp).isNull())
-         {
-             argHash["geno"] = this->value(*genoCmdOp);
-         }
-
-         if (this->isSet(*mindCmdOp) && this->value(*mindCmdOp).isNull())
-         {
-             throw invalid_argument("Invalid argument -- mind");
-         }
-         else if (this->isSet(*mindCmdOp) && !this->value(*mindCmdOp).isNull())
-         {
-             argHash["mind"] = this->value(*mindCmdOp);
-         }
-
-         if (this->isSet(*mafCmdOp) && this->value(*mafCmdOp).isNull())
-         {
-             throw invalid_argument("Invalid argument -- maf");
-         }
-         else if (this->isSet(*mafCmdOp) && !this->value(*mafCmdOp).isNull())
-         {
-             argHash["maf"] = this->value(*mafCmdOp);
-         }
-
-
          if (this->isSet(*gcta_PCsCmdOp) && this->value(*gcta_PCsCmdOp).isNull())
          {
              throw invalid_argument("Invalid argument -- PCs");
@@ -606,6 +618,48 @@ QHash<QString, QString> CommandLineParser::getArgsFromCmd()
              argHash["threads"] = this->value(*gcta_threadsCmdOp);
          }
       }
+    if (this->isSet(*FilterChr_CmdOp))  //pca/ld界面上面的FilterChr框
+    {
+        argHash["FilterChrFlag"] = true;
+        argHash["FilterChrValue"] = this->value(*FilterChr_CmdOp);
+    }
+    if (this->isSet(*FIDComplete_CmdOp))  //pca/ld界面上面的FIDComplete框
+    {
+        argHash["FIDCompleteFlag"] = true;
+        argHash["FIDCompleteValue"] = this->value(*FIDComplete_CmdOp);
+    }
+    if (this->isSet(*qualityControl_SNPlinkage))  //project界面里质量控制的小窗
+    {
+        argHash["isSNPlinkage"] = "yes";
+
+        if (!this->isSet(*qualityControl_WindowSize) || this->value(*qualityControl_WindowSize).isNull())
+        {
+            throw invalid_argument("Invalid argument --qualityControl_WindowSize");//必须要设置windowsize的值
+        }
+        else
+        {
+            argHash["qualityControl_WindowSize"] = this->value(*qualityControl_WindowSize);
+        }
+        if (!this->isSet(*qualityControl_StepLength) || this->value(*qualityControl_StepLength).isNull())
+        {
+            throw invalid_argument("Invalid argument --qualityControl_StepLength");//必须要设置StepLength的值
+        }
+        else
+        {
+            argHash["qualityControl_StepLength"] = this->value(*qualityControl_StepLength);
+        }
+        if (!this->isSet(*qualityControl_r2threshold) || this->value(*qualityControl_r2threshold).isNull())
+        {
+            throw invalid_argument("Invalid argument --qualityControl_r2threshold");//必须要设置r2threshold的值
+        }
+        else
+        {
+            argHash["qualityControl_r2threshold"] = this->value(*qualityControl_r2threshold);
+        }
+
+
+    }
+
     if (this->isSet(*stepAnnoCmdOp))
     {
         argHash["stepAnno"] = nullptr;
@@ -784,8 +838,61 @@ void CommandLineParser::runPCA(QHash<QString, QString> argHash)
 
     callGctaPca(argHash);
 }
+bool CommandLineParser::completeSnpID(QString genotype)
+{
+    if (genotype.isNull())
+    {
+        return false;
+    }
 
-bool CommandLineParser::callGctaPca(QHash<QString, QString> args)
+    QFileInfo fileInfo(genotype);
+    QString genoFileAbPath = fileInfo.absolutePath();
+    QString genoFileBaseName = fileInfo.baseName();
+    QString genoFileSuffix = fileInfo.suffix();
+    qDebug()<< "Complete SNP ID, \n";
+    bool completeFlag = true;
+    try {
+        if (isVcfFile(genotype))
+        {
+            if (!fileReader->completeSnpID(genotype))
+            {
+                throw -1;
+            }
+        }
+        if (genoFileSuffix == "ped")
+        {
+            if (!fileReader->completeSnpID(genoFileAbPath+"/"+genoFileBaseName+".map"))
+            {
+                throw -1;
+            }
+        }
+        else if (genoFileSuffix == "tped")
+        {
+            if (!fileReader->completeSnpID(genotype))
+            {
+                throw -1;
+            }
+        }
+        else if (genoFileSuffix == "bed")
+        {
+            if (!fileReader->completeSnpID(genoFileAbPath+"/"+genoFileBaseName+".bim"))
+            {
+                throw -1;
+            }
+        }
+    } catch (...) {
+        completeFlag = false;
+        qDebug()<<"Complete SNP ID ERROR.\n" ;
+    }
+    if (completeFlag)
+    {
+        qDebug()<< "Complete SNP ID OK.\n";
+    }
+
+    return true;
+}
+
+bool CommandLineParser::callGctaPca(QHash<QString, QString> args)//Corresponds to the "on_pcaRunPushButton_clicked" function from GUI
 {
     QString phenotype = args["phenoFile"];
     QString genotype = args["genoFile"];
@@ -805,6 +912,13 @@ bool CommandLineParser::callGctaPca(QHash<QString, QString> args)
     QString name = args["name"];
     QString PCs = args["PCs"];
     QString threads = args["threads"];
+    bool runningFlag=false;
+    if (runningFlag)
+    {
+        throw runtime_error("A project is running now.");
+        return false;
+    }
+    runningFlag = true;
     if (genotype.isNull() || genotype.isEmpty())
     {
         throw runtime_error("A genotype file is necessary!   ");
@@ -816,18 +930,102 @@ bool CommandLineParser::callGctaPca(QHash<QString, QString> args)
         QFileInfo genoFileInfo(genotype);
         QString genoFileAbPath = genoFileInfo.absolutePath();
         QString genoFileBaseName = genoFileInfo.baseName();
+        QString genoFileName = genoFileInfo.fileName();         // demo.vcf.gz    // demo
         QString map = args["mapFile"];
         QString out = args["out"];
         QString name = args["name"];
         QString PCs = args["PCs"];
         QString threads = args["threads"];
+        QString ProjectName = args["ProjectName"];
+
         //  binaryFile: Set a default path. Binary geno file with paht without suffix.
         QString binaryFile = genoFileAbPath+"/"+genoFileBaseName+"_tmp";
-
+        // Necessary to transform file ?
         bool transformFileFlag = false;
         bool filterDataFlag = false;
+        bool filterChrFlag = false;
+        if(args["FilterChrFlag"]==true)
+        {
+           filterChrFlag = true;
+        }
 
+        // Need binary files.  Every temp file and a "_tmp" after baseName, and will be deleted after gwas.
         Plink plink;
+        if (!completeSnpID(genotype))
+        {
+            throw -1;
+        }
+
+        if(args["isSNPlinkage"]=="yes")//用来检测QC小窗里的SNP linkage有没有选yes
+        {
+            QString linkageFilteredFilePrefix = genoFileAbPath + "/" + genoFileBaseName + "_ldfl";
+            QString winSize, stepLen, r2Threshold;
+            //这些参数对应界面里project的QC小窗，
+            winSize =  args["qualityControl_WindowSize"];
+            stepLen =   args["qualityControl_StepLength"];
+            r2Threshold=  args["qualityControl_r2threshold"];
+            plink.linkageFilter(genotype, map, winSize, stepLen, r2Threshold, linkageFilteredFilePrefix);
+
+
+
+            int exitCode = this->proc->execute(this->toolpath+"plink", plink.getParamList());
+            this->proc->waitForStarted();
+
+            if (exitCode == -2)
+            {
+                throw runtime_error("process cannot be started");
+            }
+            if (exitCode == -1)
+            {
+                throw runtime_error("process crashes");
+            }
+            this->proc->close();
+
+            QString filteredSnpIDFile = linkageFilteredFilePrefix + ".prune.in";
+
+            if (!this->checkoutExistence(filteredSnpIDFile))
+            {
+                qDebug() << "Error , Linkage filter error.";
+                throw -1;
+            }
+
+            plink.extractBySnpNameFile(genotype, map, filteredSnpIDFile, linkageFilteredFilePrefix, "plink");
+
+            exitCode = this->proc->execute(this->toolpath+"plink", plink.getParamList());
+            this->proc->waitForStarted();
+
+            if (exitCode == -2)
+            {
+                throw runtime_error("process cannot be started");
+            }
+            if (exitCode == -1)
+            {
+                throw runtime_error("process crashes");
+            }
+            this->proc->close();
+
+            genotype = linkageFilteredFilePrefix + ".ped";
+            map = linkageFilteredFilePrefix + ".map";
+            genoFileName = genoFileBaseName + "_ldfl";
+
+            if (checkoutExistence(linkageFilteredFilePrefix+".log") ||
+                    checkoutExistence(linkageFilteredFilePrefix + ".nosex"))
+            {
+                QFile file;
+                file.remove(linkageFilteredFilePrefix+".log");
+                file.remove(linkageFilteredFilePrefix+".nosex");
+            }
+
+            if (!this->checkoutExistence(genotype) ||
+                    !this->checkoutExistence(map))
+            {
+                qDebug() << "Error", "Extaract snp after linkage filter error.";
+                throw -1;
+            }
+        }
+
+
+        // Need binary files.  Every temp file and a "_tmp" after baseName, and will be deleted after gwas.
         if (isVcfFile(genotype)) // Transform "vcf" to "binary"
         {
             if(!plink.vcf2binary(genotype, binaryFile, maf, mind, geno))
@@ -886,10 +1084,74 @@ bool CommandLineParser::callGctaPca(QHash<QString, QString> args)
             this->proc->close();
         }
         else
-        {
-            binaryFile = genoFileAbPath + "/" + genoFileBaseName;
+        {   QFile::copy(genoFileAbPath + "/" + genoFileBaseName+".bed", binaryFile+".bed");
+            QFile::copy(genoFileAbPath + "/" + genoFileBaseName+".bim", binaryFile+".bim");
+            QFile::copy(genoFileAbPath + "/" + genoFileBaseName+".fam", binaryFile+".fam");
+            //binaryFile = genoFileAbPath + "/" + genoFileBaseName;
         }
+        // Reserve the SNP of chr list file.
+        if (filterChrFlag)
+        {
+            qDebug() << QDateTime::currentDateTime().toString() << "\nFilter SNP by chr list,\n" ;
+            QString snplistFile = binaryFile + "_snplist";
+            // Make keep file list.
+            QString listForChr = args["FilterChrValue"];
+            if (!fileReader->filterSNPByChr(binaryFile+".bim", listForChr, snplistFile))
+            {
+                qDebug() << QDateTime::currentDateTime().toString() << "\nFilter SNP by chr list ERROR.\n" ;
+                throw -1;
+            }
+            plink.extractBySnpNameFile(binaryFile+".bed", "", snplistFile, binaryFile+"_fc", "binary");
 
+            int exitCode = this->proc->execute(this->toolpath+"plink", plink.getParamList());
+            if (exitCode == -2)
+            {
+                throw runtime_error("process cannot be started in filter chr");
+            }
+            if (exitCode == -1)
+            {
+                throw runtime_error("process crashes in filter chr");
+            }
+            this->proc->close();
+
+            QFile file;
+            file.remove(snplistFile);
+            if (binaryFile != genoFileAbPath + "/" + genoFileBaseName)
+            {
+                file.remove(binaryFile+".bed");
+                file.remove(binaryFile+".bim");
+                file.remove(binaryFile+".fam");
+            }
+            file.remove(binaryFile+".nosex");
+            file.remove(binaryFile+".log");
+
+            binaryFile = binaryFile+"_fc";
+
+            qDebug() << QDateTime::currentDateTime().toString() << "\nFilter SNP by chr list OK.\n" ;
+
+        }
+        // Avoid error when format of chr is "Hicasm0"
+        fileReader->modifyChr(binaryFile+".bim");
+
+       // Complete FID info.
+        bool completeFidFlag =false;
+        QString fidFile;
+        if(args["FIDCompleteFlag"]==true)
+        {
+            completeFidFlag=true;
+            fidFile = args["FIDCompleteValue"];
+        }
+        if (completeFidFlag)
+        {
+           qDebug() << "Complete FID, \n" ;
+           QString famFilePath = binaryFile + ".fam";
+           if (!fileReader->completeFIDofTfam(fidFile, famFilePath))
+           {
+               qDebug() <<"Complete FID ERROR.\n";
+               throw -1;
+           }
+           qDebug() << "Complete FID OK.\n";
+        }
         // Make GRM
         Gcta gcta;
         if (gcta.makeGRM(binaryFile, binaryFile))
@@ -926,7 +1188,7 @@ bool CommandLineParser::callGctaPca(QHash<QString, QString> args)
             this->proc->close();
         }
 
-        QFile file;
+       /* QFile file;
         if (transformFileFlag)
         {
             file.remove(binaryFile+".bed");
@@ -948,6 +1210,67 @@ bool CommandLineParser::callGctaPca(QHash<QString, QString> args)
 
     //QString path = out;
     plotPca(args);
+    return true; */
+
+    QFile file;
+    if ((transformFileFlag || filterDataFlag) && binaryFile+".bed" != genotype)
+    {
+       file.remove(binaryFile+".bed");
+       file.remove(binaryFile+".bim");
+       file.remove(binaryFile+".fam");
+       file.remove(binaryFile+".nosex");
+    }
+    file.remove(binaryFile+".grm.bin");
+    file.remove(binaryFile+".grm.id");
+    file.remove(binaryFile+".grm.N.bin");
+
+       //            ui->eigenvalueLineEdit->setText(out+"/"+genoFileBaseName+".eigenval");
+       //            emit setLineEditTextSig(ui->eigenvalueLineEdit, out+"/"+genoFileBaseName+".eigenval");
+       //            ui->eigenvectorLineEdit->setText(out+"/"+genoFileBaseName+".eigenvec");
+       //            emit setLineEditTextSig(ui->eigenvectorLineEdit, out+"/"+genoFileBaseName+".eigenvec");
+
+    QString eigenvalFile = out+"/"+genoFileBaseName+".eigenval";
+    QString eigenvecFile = out+"/"+genoFileBaseName+".eigenvec";
+    QString outFile = out + "/"+ProjectName+"_pca.png";
+
+    if (!checkoutExistence(eigenvalFile) ||
+           !checkoutExistence(eigenvecFile))
+    {
+       throw -1;
+    }
+
+    qDebug()<<QDateTime::currentDateTime().toString() << "\n"<<"Plot PCA,"<< " \n";
+
+    QStringList param;
+    // The sequence of param is not changeable
+    param.clear();
+    param.append(this->scriptpath+"pca/pca_plot.R");    // Can choose pca_plot.R or pca_ggplot.R
+    param.append(eigenvalFile);
+    param.append(eigenvecFile);
+    param.append(outFile);
+
+       // R in environment path is necessary.
+    proc->start("Rscript", param);
+    if(!proc->waitForStarted())
+    {
+        delete proc;
+        proc=nullptr;
+        return false;
+    }
+    proc->waitForFinished(-1);//这句的作用是等待上面画图的进程结束，若没有这句画图会不成功
+    qDebug()<< QDateTime::currentDateTime().toString() << "\n"<< "OK,"<<"\n" << outFile << "\n";
+
+
+
+    runningFlag = false;
+}
+    catch (runtime_error *re) {
+                        qDebug() <<  re->what();
+                        this->proc->close();
+                        return false;
+                    }
+
+    this->proc->close();
     return true;
 }
 bool CommandLineParser::plotPca(QHash<QString, QString> args)
@@ -1003,7 +1326,7 @@ bool CommandLineParser::plotPca(QHash<QString, QString> args)
 
 
 void CommandLineParser::runLD(QHash<QString, QString> argHash)
-{//这个函数里有判断是否输入了基因型文件,但这个功能在cmd代码里的getArgsFromcmd函数里就有,所以这里不再判断
+{//这个函数在GUI里有判断是否输入了基因型文件,但这个功能在cmd代码里的getArgsFromcmd函数里就有,所以这里不再判断
     if(argHash["analysisCmdOp"]=="yes"||argHash["analysisCmdOp"]=="YES")
     {
         //执行family
@@ -1018,149 +1341,274 @@ void CommandLineParser::runLD(QHash<QString, QString> argHash)
 }
 void CommandLineParser::runPopLDdecaySingle(QHash<QString, QString> args)
 {
-    QString LD_plot = args["LD_plot"];
-    QString genotype =args["genoFile"];
-    QFileInfo genoFileInfo(genotype);
-    QString genoFileAbPath = genoFileInfo.absolutePath();
-    QString genoFileBaseName = genoFileInfo.baseName();
-    QString map = args["mapFile"];
-    QString out = args["out"];
-    QString name = args["ProjectName"];
-    QString maf = args["maf"];
-    QString mind = args["mind"];
-    QString geno = args["geno"];
-    //  binaryFile: Set a default path. Binary geno file with path without suffix.
-    QString plinkFile = genoFileAbPath+"/"+genoFileBaseName+"_tmp";
-    bool transformFileFlag = false;
-    bool filterDataFlag = false;
-    // Need binary files.  Every temp file and a "_tmp" after baseName, and will be deleted after gwas.
-    Plink plink;//判断输入的基因文件的格式，都转化成plink格式
-    if (isVcfFile(genotype)) // Transform "vcf" to "plink"
-    {
-        if(!plink.vcf2plink(genotype, plinkFile, maf, mind, geno))
+    try {
+        QString LD_plot = args["LD_plot"];
+        QString genotype =args["genoFile"];
+        QFileInfo genoFileInfo(genotype);
+        QString genoFileName = genoFileInfo.fileName();         // geno.vcf
+        QString genoFileAbPath = genoFileInfo.absolutePath();
+        QString genoFileBaseName = genoFileInfo.baseName();
+        QString map = args["mapFile"];
+        QString out = args["out"];
+        QString name = args["ProjectName"];
+        QString maf = args["maf"];
+        QString mind = args["mind"];
+        QString geno = args["geno"];
+        //  binaryFile: Set a default path. Binary geno file with path without suffix.
+        QString plinkFile = genoFileAbPath+"/"+genoFileBaseName+"_tmp";
+        bool transformFileFlag = false;
+        bool filterDataFlag = false;
+        bool filterChrFlag = false;
+        if(args["FilterChrFlag"]==true)
+        {
+           filterChrFlag = true;
+        }
+
+        // Need plink files.  Every temp file and a "_tmp" after baseName, and will be deleted after gwas.
+        Plink plink;//判断输入的基因文件的格式，都转化成plink格式
+        if (!completeSnpID(genotype))
         {
             throw -1;
         }
+        if (args["isSNPlinkage"]=="yes")//用来检测QC小窗里的SNP linkage 有没有选yes
+                {
+                    QString linkageFilteredFilePrefix = genoFileAbPath + "/" + genoFileBaseName + "_ldfl";
+                    QString winSize, stepLen, r2Threshold;
+                    //这些参数对应界面project的QC小窗
+                    winSize = args["qualityControl_WindowSize"];
+                    stepLen = args["qualityControl_StepLength"];
+                    r2Threshold =   args["qualityControl_r2threshold"];
+                    plink.linkageFilter(genotype, map, winSize, stepLen, r2Threshold, linkageFilteredFilePrefix);
+                    int exitCode = this->proc->execute(this->toolpath+"plink", plink.getParamList());
+                    this->proc->waitForStarted();
 
-        transformFileFlag = true;
-    }
-    if (genotype.split(".")[genotype.split(".").length()-1] == "bed")  //Transform "binary" to "plink"
-    {
-        if (!plink.binary2plink(genoFileAbPath+"/"+genoFileBaseName, plinkFile, maf, mind, geno))
+                    if (exitCode == -2)
+                    {
+                        throw runtime_error("process cannot be started");
+                    }
+                    if (exitCode == -1)
+                    {
+                        throw runtime_error("process crashes");
+                    }
+                    this->proc->close();
+
+                    QString filteredSnpIDFile = linkageFilteredFilePrefix + ".prune.in";
+
+                    if (!this->checkoutExistence(filteredSnpIDFile))
+                    {
+                       qDebug() << "Error", "Linkage filter error.";
+                       throw -1;
+                    }
+
+                    plink.extractBySnpNameFile(genotype, map, filteredSnpIDFile, linkageFilteredFilePrefix, "plink");
+
+                    exitCode = this->proc->execute(this->toolpath+"plink", plink.getParamList());
+                    this->proc->waitForStarted();
+
+                    if (exitCode == -2)
+                    {
+                        throw runtime_error("process cannot be started");
+                    }
+                    if (exitCode == -1)
+                    {
+                        throw runtime_error("process crashes");
+                    }
+                    this->proc->close();
+
+                    genotype = linkageFilteredFilePrefix + ".ped";
+                    map = linkageFilteredFilePrefix + ".map";
+                    genoFileName = genoFileBaseName + "_ldfl";
+
+                    if (checkoutExistence(linkageFilteredFilePrefix+".log") ||
+                            checkoutExistence(linkageFilteredFilePrefix + ".nosex"))
+                    {
+                        QFile file;
+                        file.remove(linkageFilteredFilePrefix+".log");
+                        file.remove(linkageFilteredFilePrefix+".nosex");
+                    }
+
+                    if (!this->checkoutExistence(genotype) ||
+                            !this->checkoutExistence(map))
+                    {
+                        qDebug() << "Error", "Extaract snp after linkage filter error.";
+                        throw -1;
+                    }
+                }
+
+        if (isVcfFile(genotype)) // Transform "vcf" to "plink"
         {
+            if(!plink.vcf2plink(genotype, plinkFile, maf, mind, geno))
+            {
+                throw -1;
+            }
+
+            transformFileFlag = true;
+        }
+        if (genotype.split(".")[genotype.split(".").length()-1] == "bed")  //Transform "binary" to "plink"
+        {
+            if (!plink.binary2plink(genoFileAbPath+"/"+genoFileBaseName, plinkFile, maf, mind, geno))
+            {
+                throw -1;
+            }
+
+            transformFileFlag = true;
+        }
+
+        if (genotype.split(".")[genotype.split(".").length()-1] == "tped")  // Transform "transpose" to "plink"
+        {
+            if (map.isNull())
+            {
+                map = genoFileAbPath+"/"+genoFileBaseName+".tfam";
+            }
+            if (!plink.transpose2plink(genotype, map, plinkFile, maf, mind, geno))
+            {
+                throw -1;
+            }
+            transformFileFlag = true;
+        }
+        if ((!maf.isNull() || !mind.isNull() || !geno.isNull()) &&
+                genotype.split(".")[genotype.split(".").length()-1] == "ped")
+        {
+            if (map.isNull())
+            {
+                map = genoFileAbPath+"/"+genoFileBaseName+".map";
+            }
+            plink.filterData(genotype, map, maf, mind, geno, plinkFile);
+            filterDataFlag = true;
+        }
+
+        if (transformFileFlag || filterDataFlag)
+        {   // Run plink to transform file or filter data.
+            int exitCode = this->proc->execute(this->toolpath+"plink", plink.getParamList());
+            if (exitCode == -2)
+            {
+                throw runtime_error("process cannot be started");
+            }
+            if (exitCode == -1)
+            {
+                throw runtime_error("process crashes");
+            }
+            this->proc->close();
+        }
+        else
+        {
+            plinkFile = genoFileAbPath + "/" + genoFileBaseName;
+        }
+
+
+        if (filterChrFlag)
+               {
+                   qDebug()<<  QDateTime::currentDateTime().toString() +
+                                                   + "\n" + "Filter SNP by chr list,\n";
+                   QString snplistFile = plinkFile + "_snplist";
+                   QString filterChrListFile = args["FilterChrValue"];
+                   // Make keep file list.
+                   if (!fileReader->filterSNPByChr(plinkFile+".map", filterChrListFile, snplistFile))
+                   {
+                       qDebug()<<  QDateTime::currentDateTime().toString() +
+                                                       + "\n" + "Filter SNP by chr list ERROR.\n";
+                       throw -1;
+                   }
+                   plink.extractBySnpNameFile(plinkFile+".ped", plinkFile+".map", snplistFile, plinkFile+"_fc", "plink");
+
+                   int exitCode = this->proc->execute(this->toolpath+"plink", plink.getParamList());
+                   if (exitCode == -2)
+                   {
+                       throw runtime_error("process cannot be started in filter chr");
+                   }
+                   if (exitCode == -1)
+                   {
+                       throw runtime_error("process crashes in filter chr");
+                   }
+                   this->proc->close();
+
+                   QFile file;
+                   file.remove(snplistFile);
+                   if (plinkFile != genoFileAbPath + "/" + genoFileBaseName)
+                   {
+                       file.remove(plinkFile+".ped");
+                       file.remove(plinkFile+".map");
+                   }
+                   file.remove(plinkFile+".nosex");
+                   file.remove(plinkFile+".log");
+
+                   plinkFile = plinkFile+"_fc";
+                   qDebug()<<  QDateTime::currentDateTime().toString() +
+                                                   + "\n" + "Filter SNP by chr list OK.\n";
+               }
+
+        qDebug() << QDateTime::currentDateTime().toString() << "\nMake " <<plinkFile << ".genotype,\n";
+        PopLDdecay popLDdecay;  //制作参数列表
+        if (popLDdecay.makeGenotype(plinkFile+".ped", plinkFile+".map", plinkFile+".genotype"))
+        {
+
+            int exitCode = this->proc->execute(this->scriptpath+"poplddecay/plink2genotype",
+                                               popLDdecay.getParamList());
+            if (exitCode == -2)
+            {
+                throw runtime_error("process cannot be started when makeGenotype(LD single)");
+            }
+            if (exitCode == -1)
+            {
+                throw runtime_error("process crashes when makeGenotype(LD single)");
+            }
+
+            qDebug()<< QDateTime::currentDateTime().toString() << "\n" << plinkFile << ".genotype OK.\n";
+        }
+        else
+        {
+            qDebug()<<QDateTime::currentDateTime().toString()<<"\n" << plinkFile << ".genotype ERROR.\n";
+            throw -1;
+        }
+        QFile file;// 移除临时变量
+        if (plinkFile != genoFileAbPath + "/" + genoFileBaseName)
+        {
+            file.remove(plinkFile+".ped");
+            file.remove(plinkFile+".map");
+        }
+        file.remove(plinkFile+".nosex");
+        file.remove(plinkFile+".log");
+        qDebug()<< QDateTime::currentDateTime().toString() << "\nRun LD,\n";
+        if (popLDdecay.runLD(plinkFile+".genotype", out+"/"+name))//填充参数列表
+        {
+
+            int exitCode = this->proc->execute(this->toolpath+"PopLDdecay",
+                                               popLDdecay.getParamList());
+            if (exitCode == -2)
+            {
+                throw runtime_error("process cannot be started when runLD(LD single)");
+            }
+            if (exitCode == -1)
+            {
+                throw runtime_error("process crashes when when runLD(LD single)");
+            }
+        }
+        file.remove(plinkFile+".genotype");
+        //plot
+        QString ldResultFile = out+"/"+name+".stat.gz";//out+"/"+name+".stat.gz"就是最终结果的路径
+        if (checkoutExistence(ldResultFile))
+        {
+            qDebug()<< QDateTime::currentDateTime().toString() <<  "\nLD OK.\n";
+            if(LD_plot=="yes")
+            {
+                ldPlot(args, ldResultFile);
+            }
+
+        }
+        else
+        {
+            qDebug()<< QDateTime::currentDateTime().toString() <<  "\nLD result file is not exist\n";
             throw -1;
         }
 
-        transformFileFlag = true;
-    }
-
-    if (genotype.split(".")[genotype.split(".").length()-1] == "tped")  // Transform "transpose" to "plink"
-    {
-        if (map.isNull())
-        {
-            map = genoFileAbPath+"/"+genoFileBaseName+".tfam";
-        }
-        if (!plink.transpose2plink(genotype, map, plinkFile, maf, mind, geno))
-        {
-            throw -1;
-        }
-        transformFileFlag = true;
-    }
-    if ((!maf.isNull() || !mind.isNull() || !geno.isNull()) &&
-            genotype.split(".")[genotype.split(".").length()-1] == "ped")
-    {
-        if (map.isNull())
-        {
-            map = genoFileAbPath+"/"+genoFileBaseName+".map";
-        }
-        plink.filterData(genotype, map, maf, mind, geno, plinkFile);
-        filterDataFlag = true;
-    }
-
-    if (transformFileFlag || filterDataFlag)
-    {   // Run plink to transform file or filter data.
-        int exitCode = this->proc->execute(this->toolpath+"plink", plink.getParamList());
-        if (exitCode == -2)
-        {
-            throw runtime_error("process cannot be started");
-        }
-        if (exitCode == -1)
-        {
-            throw runtime_error("process crashes");
-        }
         this->proc->close();
-    }
-    else
-    {
-        plinkFile = genoFileAbPath + "/" + genoFileBaseName;
+
+
+    } catch (...) {
+        ;
+
     }
 
-    qDebug() << QDateTime::currentDateTime().toString() << "\nMake " <<plinkFile << ".genotype,\n";
-    PopLDdecay popLDdecay;  //制作参数列表
-    if (popLDdecay.makeGenotype(plinkFile+".ped", plinkFile+".map", plinkFile+".genotype"))
-    {
-
-        int exitCode = this->proc->execute(this->scriptpath+"poplddecay/plink2genotype",
-                                           popLDdecay.getParamList());
-        if (exitCode == -2)
-        {
-            throw runtime_error("process cannot be started when makeGenotype(LD single)");
-        }
-        if (exitCode == -1)
-        {
-            throw runtime_error("process crashes when makeGenotype(LD single)");
-        }
-
-        qDebug()<< QDateTime::currentDateTime().toString() << "\n" << plinkFile << ".genotype OK.\n";
-    }
-    else
-    {
-        qDebug()<<QDateTime::currentDateTime().toString()<<"\n" << plinkFile << ".genotype ERROR.\n";
-        throw -1;
-    }
-    QFile file;// 移除临时变量
-    if (plinkFile != genoFileAbPath + "/" + genoFileBaseName)
-    {
-        file.remove(plinkFile+".ped");
-        file.remove(plinkFile+".map");
-    }
-    file.remove(plinkFile+".nosex");
-    file.remove(plinkFile+".log");
-    qDebug()<< QDateTime::currentDateTime().toString() << "\nRun LD,\n";
-    if (popLDdecay.runLD(plinkFile+".genotype", out+"/"+name))//填充参数列表
-    {
-
-        int exitCode = this->proc->execute(this->toolpath+"PopLDdecay",
-                                           popLDdecay.getParamList());
-        if (exitCode == -2)
-        {
-            throw runtime_error("process cannot be started when runLD(LD single)");
-        }
-        if (exitCode == -1)
-        {
-            throw runtime_error("process crashes when when runLD(LD single)");
-        }
-
-  /*      if (checkoutExistence(out+"/"+name+".stat.gz"))
-        {
-            //out+"/"+name+".stat.gz"就是最终结果的路径
-            emit setLineEditTextSig(ui->ldResultLineEdit, out+"/"+name+".stat.gz");
-            QThread::msleep(10);
-        }*/
-
-        qDebug()<< QDateTime::currentDateTime().toString() <<  "\nLD OK.\n";
-    }
-    else
-    {
-        qDebug()<< QDateTime::currentDateTime().toString() << "\nLD ERROR.\n";
-        throw -1;
-    }
-    file.remove(plinkFile+".genotype");
-    if(LD_plot=="yes")
-    {
-        ldPlot(args, out+"/"+name+".stat.gz");
-    }
-    this->proc->close();
 
 }
 void CommandLineParser::runPopLDdecaybyFamily(QHash<QString, QString> args)
@@ -1174,6 +1622,7 @@ void CommandLineParser::runPopLDdecaybyFamily(QHash<QString, QString> args)
     QString mind = args["mind"];
     QString geno = args["geno"];
     QFileInfo genoFileInfo(genotype);
+    QString genoFileName = genoFileInfo.fileName();         // demo.vcf.gz    // demo
     QString genoFileSuffix = genoFileInfo.suffix();
     QString genoFileBaseName = genoFileInfo.baseName();
     QString genoFileAbPath = genoFileInfo.absolutePath();
@@ -1181,9 +1630,98 @@ void CommandLineParser::runPopLDdecaybyFamily(QHash<QString, QString> args)
     Plink plink;
     PopLDdecay popLDdecay;
 
+    //  plinkFile: Set a default path. Plink geno file with paht without suffix.
     QString plinkFile = genoFileAbPath+"/"+genoFileBaseName+"_tmp";
+    // Necessary to transform file ?
     bool transformFileFlag = false;
     bool filterDataFlag = false;
+
+    bool fidCompleteFlag =false;
+    QString fidFile;
+    if(args["FIDCompleteFlag"]==true)
+    {
+        fidCompleteFlag=true;
+        fidFile = args["FIDCompleteValue"];
+    }
+
+    bool filterChrFlag = false;
+    if(args["FilterChrFlag"]==true)
+    {
+       filterChrFlag = true;
+    }
+
+    if (!completeSnpID(genotype))
+    {
+       throw -1;
+    }
+    if(args["isSNPlinkage"]=="yes")//用来检测QC小窗里的SNP linkage有没有选yes
+    {
+        QString linkageFilteredFilePrefix = genoFileAbPath + "/" + genoFileBaseName + "_ldfl";
+        QString winSize, stepLen, r2Threshold;
+        //这些参数对应界面里project的QC小窗，
+        winSize =  args["qualityControl_WindowSize"];
+        stepLen =   args["qualityControl_StepLength"];
+        r2Threshold=  args["qualityControl_r2threshold"];
+        plink.linkageFilter(genotype, map, winSize, stepLen, r2Threshold, linkageFilteredFilePrefix);
+
+
+
+        int exitCode = this->proc->execute(this->toolpath+"plink", plink.getParamList());
+        this->proc->waitForStarted();
+
+        if (exitCode == -2)
+        {
+            throw runtime_error("process cannot be started");
+        }
+        if (exitCode == -1)
+        {
+            throw runtime_error("process crashes");
+        }
+        this->proc->close();
+
+        QString filteredSnpIDFile = linkageFilteredFilePrefix + ".prune.in";
+
+        if (!this->checkoutExistence(filteredSnpIDFile))
+        {
+            qDebug() << "Error , Linkage filter error.";
+            throw -1;
+        }
+
+        plink.extractBySnpNameFile(genotype, map, filteredSnpIDFile, linkageFilteredFilePrefix, "plink");
+
+        exitCode = this->proc->execute(this->toolpath+"plink", plink.getParamList());
+        this->proc->waitForStarted();
+
+        if (exitCode == -2)
+        {
+            throw runtime_error("process cannot be started");
+        }
+        if (exitCode == -1)
+        {
+            throw runtime_error("process crashes");
+        }
+        this->proc->close();
+
+        genotype = linkageFilteredFilePrefix + ".ped";
+        map = linkageFilteredFilePrefix + ".map";
+        genoFileName = genoFileBaseName + "_ldfl";
+
+        if (checkoutExistence(linkageFilteredFilePrefix+".log") ||
+                checkoutExistence(linkageFilteredFilePrefix + ".nosex"))
+        {
+            QFile file;
+            file.remove(linkageFilteredFilePrefix+".log");
+            file.remove(linkageFilteredFilePrefix+".nosex");
+        }
+
+        if (!this->checkoutExistence(genotype) ||
+                !this->checkoutExistence(map))
+        {
+            qDebug() << "Error", "Extaract snp after linkage filter error.";
+            throw -1;
+        }
+    }
+
 
     if (isVcfFile(genotype)) // Transform "vcf" to "plink"
     {
@@ -1250,8 +1788,19 @@ void CommandLineParser::runPopLDdecaybyFamily(QHash<QString, QString> args)
     qDebug() << QDateTime::currentDateTime().toString() << "\nMake .keep file, \n" ;
 //    if (genoFileSuffix == "ped")
 //    {
-        keepFileList = popLDdecay.makeKeepFile(genotype);
-//    }
+
+    if (fidCompleteFlag)
+    {
+        qDebug() << "Complete FID, \n" ;
+        if (!fileReader->completeFIDofPed(fidFile, genotype))
+        {
+            qDebug() << "Complete FID ERROR! \n";
+            throw -1;
+        }
+        qDebug() << "Complete FID OK \n";
+    }
+     keepFileList = popLDdecay.makeKeepFile(genotype);
+//    }p
 //    if (genoFileSuffix == "tped")
 //    {
 //        map = map.isNull() ? genoFileAbPath+"/"+genoFileBaseName+".tfam" : map;
@@ -1262,13 +1811,17 @@ void CommandLineParser::runPopLDdecaybyFamily(QHash<QString, QString> args)
 //        map = map.isNull() ? genoFileAbPath+"/"+genoFileBaseName+".fam" : map;
 //        keepFileList = popLDdecay.makeKeepFile(map);
 //    }
+
      qDebug() << QDateTime::currentDateTime().toString() << "\n.keep file OK.\n" ;
      bool isLD_OK = true;
+     QStringList graphList;  // Save png path and set to graphViewer after plot.
      for (QString keepFile:keepFileList)
      {
-         QFileInfo keepFileInfo(keepFile);
+         QFileInfo keepFileInfo(keepFile); // WARNING
          QString keepFileBaseName = keepFileInfo.baseName();
          QString keepFileAbPath = keepFileInfo.absolutePath();
+         QString curGenotypeFile = genoFileAbPath+"/"+keepFileBaseName;
+
          qDebug() << QDateTime::currentDateTime().toString() << "\nMake "<<keepFileBaseName
                   <<".ped and "<<keepFileBaseName<<".map, \n" ;
 
@@ -1278,13 +1831,13 @@ void CommandLineParser::runPopLDdecaybyFamily(QHash<QString, QString> args)
          {
              map = map.isNull() ? genoFileAbPath+"/"+genoFileBaseName+".map" : map;
              plink.splitPlinkFile(genotype, map, keepFile,
-                     genoFileAbPath+"/"+keepFileBaseName, maf, mind, geno);
+                     curGenotypeFile, maf, mind, geno);
          }
          if (genoFileSuffix == "tped")
          {
              map = map.isNull() ? genoFileAbPath+"/"+genoFileBaseName+".tfam" : map;
              plink.splitTransposeFile(genotype, map, keepFile,
-                     genoFileAbPath+"/"+keepFileBaseName, maf, mind, geno);
+                     curGenotypeFile, maf, mind, geno);
          }
          if (genoFileSuffix == "bed")
          {
@@ -1309,6 +1862,51 @@ void CommandLineParser::runPopLDdecaybyFamily(QHash<QString, QString> args)
          file.remove(keepFile);
          qDebug() << QDateTime::currentDateTime().toString() <<
                      "\nMake "<<keepFileBaseName<<".genotype,\n";
+         // Reserve SNP in chr list fileW
+         if (filterChrFlag)
+         {    QString filterChrListFile=args["FilterChrValue"];
+              qDebug() <<  QDateTime::currentDateTime().toString() +
+                                             + "\n" + "Filter SNP by chr list,\n";
+             QString snplistFile = curGenotypeFile + "_snplist";
+             // Make keep file list.
+             if (!fileReader->filterSNPByChr(curGenotypeFile+".map", filterChrListFile, snplistFile))
+             {
+                 qDebug() <<  QDateTime::currentDateTime().toString() +
+                                                 + "\n" + "Filter SNP by chr list ERROR.\n";
+                 throw -1;
+             }
+             plink.extractBySnpNameFile(curGenotypeFile+".ped", curGenotypeFile+".map", snplistFile, curGenotypeFile+"_fc", "plink");
+
+             int exitCode = this->proc->execute(this->toolpath+"plink", plink.getParamList());
+             if (exitCode == -2)
+             {
+                 throw runtime_error("process cannot be started when Split ped and map file(LD family)");
+             }
+             if (exitCode == -1)
+             {
+                 throw runtime_error("process crashes when Split ped and map file(LD family)");
+             }
+             file.remove(snplistFile);
+             if (plinkFile != genoFileAbPath + "/" + genoFileBaseName)
+             {
+                 file.remove(plinkFile+".ped");
+                 file.remove(plinkFile+".map");
+             }
+             file.remove(plinkFile+".nosex");
+             file.remove(plinkFile+".log");
+
+             plinkFile = plinkFile+"_fc";
+
+             curGenotypeFile = curGenotypeFile+"_fc";
+
+             QFile file;
+             file.remove(snplistFile);
+
+             qDebug() << QDateTime::currentDateTime().toString() +
+                                             + "\n" + "Filter SNP by chr list OK.\n";
+         }
+
+
 
          // Make .genotype file.
          if (popLDdecay.makeGenotype(genoFileAbPath+"/"+keepFileBaseName+".ped",
@@ -1433,7 +2031,7 @@ bool CommandLineParser::checkoutExistence(QString filePath)
 }
 void CommandLineParser::runGWAS(QHash<QString, QString> argHash)
 {
-    QStringList param;
+    QStringList param;   //gwas流程里，GUI的代码里有针对多个输入表型文件的情况，cmd暂时还没这部分
     if (argHash["tool"] == "plink")
     {
         callPlinkGwas(argHash);
@@ -1474,6 +2072,102 @@ bool CommandLineParser::callPlinkGwas(QHash<QString, QString> args)
     QString pheFileBaseName = pheFileInfo.baseName();
 
     Plink plink;
+    if (!completeSnpID(genotype))
+    {
+        return false;
+    }
+    // Linkage filter
+   if (args["isSNPlinkage"]=="yes")
+   {
+       QString linkageFilteredFilePrefix = genoFileAbPath + "/" + genoFileBaseName + "_ldfl";
+       QString winSize, stepLen, r2Threshold;
+       winSize = args["qualityControl_WindowSize"];
+       stepLen = args["qualityControl_StepLength"];
+       r2Threshold= args["qualityControl_r2threshold"];
+
+       qDebug()<< "Linkage filter,\n";
+
+       plink.linkageFilter(genotype, map, winSize, stepLen, r2Threshold, linkageFilteredFilePrefix);
+       int exitCode = this->proc->execute(this->toolpath+"plink", plink.getParamList());
+       if (exitCode == -1)
+       {
+           throw runtime_error("process crashes");
+       }
+       if (exitCode == -2)
+       {
+           throw runtime_error("process cannot be started");
+       }
+       this->proc->close();
+
+       QString filteredSnpIDFile = linkageFilteredFilePrefix + ".prune.in";
+
+       if (!this->checkoutExistence(filteredSnpIDFile))
+       {
+           qDebug()<<"Error", "Linkage filter error." ;
+           return false;
+       }
+
+       plink.extractBySnpNameFile(genotype, map, filteredSnpIDFile, linkageFilteredFilePrefix, "plink");
+
+       qDebug()<< "Extract by SNP name\n";
+
+       exitCode = this->proc->execute(this->toolpath+"plink", plink.getParamList());
+       if (exitCode == -1)
+       {
+           throw runtime_error("process crashes");
+       }
+       if (exitCode == -2)
+       {
+           throw runtime_error("process cannot be started");
+       }
+       this->proc->close();
+
+       qDebug()<<"OK\n" ;
+
+       genotype = linkageFilteredFilePrefix + ".ped";
+       map = linkageFilteredFilePrefix + ".map";
+       genoFileName = genoFileName + "_ldfl";
+
+       if (checkoutExistence(linkageFilteredFilePrefix+".log") ||
+               checkoutExistence(linkageFilteredFilePrefix + ".nosex"))
+       {
+           QFile file;
+           file.remove(linkageFilteredFilePrefix+".log");
+           file.remove(linkageFilteredFilePrefix+".nosex");
+       }
+
+       if (!this->checkoutExistence(genotype) || !this->checkoutExistence(map))
+       {
+          qDebug()<< "Error", "Extract snp after linkage filter error.";
+           return false;
+       }
+   }
+   if (genotype.split(".")[genotype.split(".").length()-1] == "ped")
+       {
+           if (map.isNull())
+           {
+               map = genoFileAbPath+"/"+genoFileBaseName+".map";
+           }
+           fileReader->completePedFromPheno(phenotype, genotype);
+       }
+
+   if (genotype.split(".")[genotype.split(".").length()-1] == "tped")
+   {
+       if (map.isNull())
+       {
+           map = genoFileAbPath+"/"+genoFileBaseName+".tfam";
+       }
+       fileReader->completeTfamFromPheno(phenotype, map);
+   }
+
+   if (genotype.split(".")[genotype.split(".").length()-1] == "bed")
+   {
+       if (map.isNull())
+       {
+           map = genoFileAbPath+"/"+genoFileBaseName+".fam";
+       }
+       fileReader->completeTfamFromPheno(phenotype, map);
+   }
 
     try {
         // Run GWAS
@@ -1490,16 +2184,28 @@ bool CommandLineParser::callPlinkGwas(QHash<QString, QString> args)
         {
             throw runtime_error("process crashes");
         }
-//        this->proc->start(this->toolpath+"plink", plink.getParamList());
-//        if (!this->proc->waitForStarted())
-//        {
-//            throw runtime_error("Start plink error");
-//        }
+        if (!this->checkoutExistence(out+"/"+ProjectName+"_"+pheFileBaseName+".assoc."+model.toLower()))
+        {
+             qDebug() <<  "Error", "Plink GWAS error.";
+            return false;
+        }
+        QString plotInutFile;
 
-//        if (!this->proc->waitForFinished(-1))
-//        {
-//            throw runtime_error("Finish plink error");
-//        }
+       if ( checkoutExistence(out+"/"+ProjectName+"_"+pheFileBaseName+".assoc."+model.toLower()))
+       {
+           //        ui->qqmanGwasResultLineEdit->setText(out+"/"+name+"_"+pheFileBaseName+".assoc."+model.toLower());
+   //        emit setLineEditTextSig(ui->qqmanGwasResultLineEdit,
+   //                                out+"/"+name+"_"+pheFileBaseName+".assoc."+model.toLower());
+           plotInutFile = out+"/"+ProjectName+"_"+pheFileBaseName+".assoc."+model.toLower();
+           qDebug() << out+"/"+ProjectName+"_"+pheFileBaseName+".assoc."+model.toLower();
+       }
+
+       if (checkoutExistence(plotInutFile))
+       {
+
+            drawManhattan(args, plotInutFile);
+       }
+
     } catch (runtime_error *re) {
         qDebug() <<  re->what();
         return false;
@@ -1508,15 +2214,10 @@ bool CommandLineParser::callPlinkGwas(QHash<QString, QString> args)
     file.remove(out+"/"+ProjectName+"_"+pheFileBaseName+".nosex");
     file.remove(out+"/"+ProjectName+"_"+pheFileBaseName+".log");
     this->proc->close();
-     //plink分析后的结果文件,这里只是选择linear模型的结果来画图
-    //至于logistic模型的结果，因为界面没跑成功过，不知道它结果的后缀是咋样的，还没搞
-    QString resultfile = out+"/"+ProjectName+"_"+pheFileBaseName+".assoc."+model.toLower() ;
-
-    drawManhattan(args, resultfile);
 
 
 
-    return true;
+
 
 }
 
@@ -1538,7 +2239,7 @@ bool CommandLineParser::callGemmaGwas(QHash<QString, QString> args)
     QString ProjectName = args["ProjectName"];
     // Specific arguments
     bool isFamCompletedAuto = args["famcomple"] == "0" ? 0 : 1;  //这个参数表示要不要改造fam文件，若用户输0表示不要 1表示要
-    bool isMakeRelatedMatAuto = args["makekin"] == "0" ? 0 : 1; //这个参数表示要不要生成亲缘矩阵，若用户输0表示不要 1表示要
+    bool isMakeRelatedMatAuto = args["gemma_makekin"] == "0" ? 0 : 1; //这个参数表示要不要生成亲缘矩阵，若用户输0表示不要 1表示要
 
     // Genotype file info.
     QFileInfo genoFileInfo = QFileInfo(genotype); //比如输入的基因型文件参数为 ：home/data/hapmap.bed
@@ -1558,11 +2259,75 @@ bool CommandLineParser::callGemmaGwas(QHash<QString, QString> args)
 
     // Need binary files.  Every temp file and a "_tmp" after baseName, and will be deleted after gwas.
     Plink plink;
-    try {
+    if (!completeSnpID(genotype))
+    {
+        return false;
+    }
+    if (args["isSNPlinkage"]=="yes")
+        {
+            QString linkageFilteredFilePrefix = genoFileAbPath + "/" + genoFileBaseName + "_ldfl";
+            QString winSize, stepLen, r2Threshold;
+            winSize = args["qualityControl_WindowSize"];
+            stepLen = args["qualityControl_StepLength"];
+            r2Threshold= args["qualityControl_r2threshold"];
+            plink.linkageFilter(genotype, map, winSize, stepLen, r2Threshold, linkageFilteredFilePrefix);
+
+            int exitCode = this->proc->execute(this->toolpath+"plink", plink.getParamList());
+            if (exitCode == -1)
+            {
+                throw runtime_error("process crashes");
+            }
+            if (exitCode == -2)
+            {
+                throw runtime_error("process cannot be started");
+            }
+            this->proc->close();
+            QString filteredSnpIDFile = linkageFilteredFilePrefix + ".prune.in";
+            if (!this->checkoutExistence(filteredSnpIDFile))
+            {
+                qDebug()<< "Error", "Linkage filter error." ;
+                return false;
+            }
+
+            plink.extractBySnpNameFile(genotype, map, filteredSnpIDFile, linkageFilteredFilePrefix, "plink");
+
+            exitCode = this->proc->execute(this->toolpath+"plink", plink.getParamList());
+            if (exitCode == -1)
+            {
+                throw runtime_error("process crashes");
+            }
+            if (exitCode == -2)
+            {
+                throw runtime_error("process cannot be started");
+            }
+            this->proc->close();
+
+            genotype = linkageFilteredFilePrefix + ".ped";
+            map = linkageFilteredFilePrefix + ".map";
+            genoFileName = genoFileBaseName + "_ldfl";
+
+            if (checkoutExistence(linkageFilteredFilePrefix+".log") ||
+                    checkoutExistence(linkageFilteredFilePrefix + ".nosex"))
+            {
+                QFile file;
+                file.remove(linkageFilteredFilePrefix+".log");
+                file.remove(linkageFilteredFilePrefix+".nosex");
+            }
+
+            if (!this->checkoutExistence(genotype) ||
+                    !this->checkoutExistence(map))
+            {
+                 qDebug()<< "Error", "Extaract snp after linkage filter error.";
+                return false;
+            }
+        }
+
+
+
     if (isVcfFile(genotype)) // 看下是不是vcf文件 若是就要把vcf转化成二进制格式
     {
         if(!plink.vcf2binary(genotype, binaryFile, maf, mind, geno))//该函数会将vcf转化二进制和进行质量控制的plink语法添加进参数列表
-        {                                      //这里将binaryfile作为输出路径,因此生成的二进制文件跟输入的基因型文件在同个路径下
+        {                                      //这里将transposeFile作为输出路径,因此生成的二进制文件跟输入的基因型文件在同个路径下
 
             return false;
         }
@@ -1575,34 +2340,33 @@ bool CommandLineParser::callGemmaGwas(QHash<QString, QString> args)
         {
             map = genoFileAbPath+"/"+genoFileBaseName+".map";
         }
-        if (!plink.plink2binary(genotype, map, binaryFile, maf, mind, geno))//gemma的基因型输入文件的格式必须是二进制那个
-        {                                                                   //所以需要把各种基因型文件转换成二进制格式
+        if (!plink.plink2binary(genotype, map, binaryFile, maf, mind, geno))
+        {
             return false;
         }
 
         transformFileFlag = true;
     }
-
     if (genotype.split(".")[genotype.split(".").length()-1] == "tped")  // Transform "transpose" to "binary"
-    {
-        if (map.isNull())
-        {
-            map = genoFileAbPath+"/"+genoFileBaseName+".tfam";
-        }
-        if (!plink.transpose2binary(genotype, map, binaryFile, maf, mind, geno))
-        {
+       {
+           if (map.isNull())
+           {
+               map = genoFileAbPath+"/"+genoFileBaseName+".tfam";
+           }
+           if (!plink.transpose2binary(genotype, map, binaryFile, maf, mind, geno))
+           {
+               return false;
+           }
+           transformFileFlag = true;
+       }
+     if ((!maf.isNull() || !mind.isNull() || !geno.isNull()) &&
+               genotype.split(".")[genotype.split(".").length()-1] == "bed")
+       {   // When don't set any QC param, it won't execute.
+           plink.filterBinaryFile(genoFileAbPath+"/"+genoFileBaseName, maf, mind, geno, binaryFile);
+           filterDataFlag = true;
+       }
 
-            return false;
-        }
-        transformFileFlag = true;
-    }
-
-    if (genotype.split(".")[genotype.split(".").length()-1] == "bed")//若基因型输入的本来就是二进制文件就不需要转化
-    {   // When don't set any QC param, it won't execute.             //若有质控要求就添加质控命令到列表 没有就算
-        plink.filterBinaryFile(genoFileAbPath+"/"+genoFileBaseName, maf, mind, geno, binaryFile);
-        filterDataFlag = true;
-    }
-    if (transformFileFlag || filterDataFlag)//要么有转化格式 要么有进行质控，负责就不能进行底层plink调用
+    if (transformFileFlag || filterDataFlag)//要么有转化格式 要么有进行质控，否则就不能进行底层plink调用
     {   // Run plink to transform file or filter data. 这里正式开始调用底层plink工具转化格式的同时进行质控
        int exitCode = this->proc->execute(this->toolpath+"plink", plink.getParamList());
        if (exitCode == -2)                                                              //由toolpath来告知系统plink工具在哪
@@ -1613,26 +2377,29 @@ bool CommandLineParser::callGemmaGwas(QHash<QString, QString> args)
        {
            throw runtime_error("process crashes when run QC and transform file by plink");
        }
+
      }
-    }
-    catch (runtime_error *re)
+    else
         {
-            qDebug() <<  re->what();
-            return false;
+            binaryFile = genoFileAbPath + "/" + genoFileBaseName;
         }
+
+    fileReader->completeTfamFromPheno(phenotype, binaryFile+".fam");
+
+
 
     //前面是用plink转化格式和质量控制的部分 接下来轮到主角gemma
     Gemma gemma;
 
-    if (isFamCompletedAuto && !gemma.phe_fam_Preparation(phenotype, binaryFile+".fam"))//改造fam文件
+    if (isFamCompletedAuto)//改造fam文件
     {   // Replace "NA" to "-9", then complete .fam
         // .fam: FID IID PID MID Sex 1 Phe  (phenotype data to the 7th column of .fam)
+        gemma.phe_fam_Preparation(phenotype, binaryFile+".fam");
 
-        return false;
     }
 
 
-    if (kinship.isNull() && isMakeRelatedMatAuto)//如果用户没有输入亲缘矩阵文件，同时要求生成亲缘矩阵，则就开始制作矩阵（实际上两个条件有一个就行了，比较鸡肋）
+    if (kinship.isNull()  && model == "LMM" && isMakeRelatedMatAuto)//如果用户没有输入亲缘矩阵文件，同时要求生成亲缘矩阵，则就开始制作矩阵（实际上两个条件有一个就行了，比较鸡肋）
     {    qDebug()<< "kinship_type: " << kinship_type ;
          if (!gemma.makeKinship(binaryFile, genoFileBaseName+"_tmp", kinship_type))//这里生成亲缘矩阵（其实是填充生成亲缘矩阵命令参数列表，使后面直接调用gemma生成矩阵）
          {                                                              //需要注意这里生成的矩阵它的名字带有后缀_tmp但它的位置不一定和所用的二进制文件在一起,而是在当前终端的路径下
@@ -1640,21 +2407,8 @@ bool CommandLineParser::callGemmaGwas(QHash<QString, QString> args)
              return false;  // Make kinship failed.
          }
          int exitCode= this->proc->execute(this->toolpath+"gemma", gemma.getParamList());//正式开始底层调用gemma来生成矩阵
- /*      if (!this->process->waitForStarted())
-         {
-             QMessageBox::information(nullptr, "Error", "Start gemma with error when  make kinship!   ");
-             this->resetWindow();
-             return false;
-         }
-         //this->runningMsgWidget->setTitle("Making " + genoFileBaseName+"_tmp" + ".cXX.txt");
-         this->runningMsgWidget->setTitle("Making kinship");
-         if (!this->process->waitForFinished(-1))
-         {
-             QMessageBox::information(nullptr, "Error", "Exit gemma with error when  make kinship!   ");
-             this->resetWindow();
-             return false;
-         }
-*/
+
+
          try {
                  if (exitCode == -2)
                  {
@@ -1686,7 +2440,19 @@ bool CommandLineParser::callGemmaGwas(QHash<QString, QString> args)
          }
          qDebug()<< "kinship:"<<kinship; //在命令行里看看矩阵文件的路径对不对
     }
-
+    if (!covar.isNull())
+        {
+            QString desCovar = covar+".tmp";
+            if (!this->fileReader->transformCovariateFile(covar, desCovar))
+            {
+                return false;
+            }
+            if (!QFile::exists(desCovar))
+            {
+                return false;
+            }
+            covar = desCovar;
+        }
     if (gemma.runGWAS(binaryFile, phenotype, covar, kinship,
                      ProjectName+"_"+pheFileBaseName, model, lmmtest, bslmmmodel))//往参数列表里填充gemma的各种命令
     {   qDebug()<< "this->toolpath+gemma:"<<this->toolpath+"gemma" ;
@@ -1709,40 +2475,25 @@ bool CommandLineParser::callGemmaGwas(QHash<QString, QString> args)
             return false;
         }
 
-        // Running message to display message.
-/*        if (!this->process->waitForStarted())
-        {
-            QMessageBox::information(nullptr, "Error", "Start gemma with error when run GWAS! ");
-            this->resetWindow();
-            return false;
-        }
-        this->runningMsgWidget->setTitle("Gemma(" + pheFileBaseName+ "): " + name+" is running...");
-        if (!this->process->waitForFinished(-1))
-        {
-            QMessageBox::information(nullptr, "Error", "Exit gemma with error when run GWAS! ");
-            this->resetWindow();
-            return false;
-        }
-*/
+
         this->proc->close();
 
         QFile file;
         // delete intermidiate file.把过渡的二进制文件以及矩阵文件都删除 只保留最终结果
-        file.remove(binaryFile+".bed");
-        file.remove(binaryFile+".bim");
-        file.remove(binaryFile+".fam");
+        if (binaryFile+".bed" != args["genofile"])
+        {
+            file.remove(binaryFile+".bed");
+            file.remove(binaryFile+".bim");
+            file.remove(binaryFile+".fam");
+        }
         file.remove(binaryFile+".log");
         file.remove(binaryFile+".nosex");
-        if (kinship_type == "1")
-        {
-          //  file.remove(QDir::currentPath() + "/output/"+genoFileBaseName+"_tmp.cXX.txt");
-        }
-        else
-        {
-          //  file.remove(QDir::currentPath() + "/output/"+genoFileBaseName+"_tmp.sXX.txt");
-        }
         file.remove(QDir::currentPath() + "/output/"+genoFileBaseName+"_tmp.log.txt");
-
+        if (args["isSNPlinkage"]=="yes" && genotype != args["genofile"])
+        {
+            file.remove(genotype);
+            file.remove(map);
+        }
 
         QDir dir;   // gemma output in the execution file dir by default.
         QDir objDir(out+"/output");
@@ -1756,11 +2507,62 @@ bool CommandLineParser::callGemmaGwas(QHash<QString, QString> args)
         }
  // rename可以更改一个已经存在的文件的路径,相当于把一个文件移动到新地方去,但要注意新地方必须已经存在
  //如最终移动到 /desktop/out/output这个路径下,则/desktop/out这个必须要先存在,rename只会在out文件夹里新建一个output文件夹
-        dir.rename(QDir::currentPath() + "/output", out+"/output"+(i==0?"":QString::number(i)));
+        bool renameRes = dir.rename(QDir::currentPath() + "/output", objDir.path());
 
-//        ui->gwasResultLineEdit->setText(out+"/output"+(i==0?"":QString::number(i))+"/"+name+"_"+pheFileBaseName);
+        if (!renameRes)
+        {
+            qDebug()<<"Warning", "Can't write result file into " +
+                              objDir.path() +
+                              ", the result file will be written in " +
+                              QDir::currentPath() + "/output" ;
+            objDir.setPath(QDir::currentPath()+ "/output");
+        }
+        QString plotInputFile;  // p value file. to plot manhattan and QQ plot.
+        // Correct p value
+        QString correctionType = args["correction"];
+        if (model == "LMM" && !(correctionType=="no"))
+            {
+                QString pValFile = objDir.path()+"/"+ProjectName+"_"+pheFileBaseName+".assoc.txt";
+                QString correctedFile = objDir.path()
+                        +"/"+ProjectName+"_"+pheFileBaseName+"_corr.assoc.txt";
 
-        if(model=="LMM")//注意！BSLMM模型的结果不能画图 只有LMM才可以！
+                this->pValCorrect(pValFile, true, correctionType, correctedFile);
+
+                if (!this->checkoutExistence(correctedFile))
+                {
+                    qDebug()<<"Error", "Gemma corrected error.";
+                    return false;
+                }
+
+                if (checkoutExistence(correctedFile))
+                {
+                    plotInputFile = correctedFile;
+        //            emit setLineEditTextSig(ui->qqmanGwasResultLineEdit, correctedFile);
+                   qDebug()<<correctedFile;
+
+                }
+            }
+        else if (model == "LMM")
+        {
+            if (!this->checkoutExistence(objDir.path()+"/"+ProjectName+"_"+pheFileBaseName+".assoc.txt"))
+            {
+                qDebug()<< "Error", "Gemma GWAS error.";
+                return false;
+            }
+
+    //        emit setLineEditTextSig(ui->qqmanGwasResultLineEdit, objDir.path()
+    //                                +"/"+name+"_"+pheFileBaseName+".assoc.txt");
+            plotInputFile = objDir.path() +"/"+ProjectName+"_"+pheFileBaseName+".assoc.txt";
+             qDebug()<<  objDir.path() +"/"+ProjectName+"_"+pheFileBaseName+".assoc.txt";
+
+        }
+        if (checkoutExistence(plotInputFile))
+            {
+
+                drawManhattan(args, plotInputFile);
+            }
+ /*
+     if(model=="LMM")//注意！BSLMM模型的结果不能画图 只有LMM才可以！
         {
             //gemma分析后的结果文件
             QString resultfile = out+"/output"+(i==0?"":QString::number(i))+ "/"+ProjectName+"_"+pheFileBaseName+".assoc.txt";
@@ -1768,11 +2570,10 @@ bool CommandLineParser::callGemmaGwas(QHash<QString, QString> args)
             drawManhattan(args, resultfile);
 
         }
-
+*/
 
 
   }
-
 
     return true;
 }
@@ -1822,6 +2623,60 @@ bool CommandLineParser::callEmmaxGwas(QHash<QString, QString> args)
 
     try {//输入的基因型文件都要转化成tped格式来用
         Plink plink;
+        if (!completeSnpID(genotype))
+        {
+           return false;
+        }
+        if (args["isSNPlinkage"]=="yes")
+           {
+               QString linkageFilteredFilePrefix = genoFileAbPath + "/" + genoFileBaseName + "_ldfl";
+               QString winSize, stepLen, r2Threshold;
+               winSize = args["qualityControl_WindowSize"];
+               stepLen = args["qualityControl_StepLength"];
+               r2Threshold= args["qualityControl_r2threshold"];
+               plink.linkageFilter(genotype, map, winSize, stepLen, r2Threshold, linkageFilteredFilePrefix);
+
+               int exitCode = this->proc->execute(this->toolpath+"plink", plink.getParamList());
+               if (exitCode == -1)
+               {
+                   throw runtime_error("process crashes");
+               }
+               if (exitCode == -2)
+               {
+                   throw runtime_error("process cannot be started");
+               }
+               this->proc->close();
+
+
+               QString filteredSnpIDFile = linkageFilteredFilePrefix + ".prune.in";
+
+               plink.extractBySnpNameFile(genotype, map, filteredSnpIDFile, linkageFilteredFilePrefix, "plink");
+
+
+               exitCode = this->proc->execute(this->toolpath+"plink", plink.getParamList());
+               if (exitCode == -1)
+               {
+                   throw runtime_error("process crashes");
+               }
+               if (exitCode == -2)
+               {
+                   throw runtime_error("process cannot be started");
+               }
+               this->proc->close();
+
+               genotype = linkageFilteredFilePrefix + ".ped";
+               map = linkageFilteredFilePrefix + ".map";
+               genoFileName = genoFileBaseName + "_ldfl";
+
+               if (checkoutExistence(linkageFilteredFilePrefix+".log") ||
+                       checkoutExistence(linkageFilteredFilePrefix + ".nosex"))
+               {
+                   QFile file;
+                   file.remove(linkageFilteredFilePrefix+".log");
+                   file.remove(linkageFilteredFilePrefix+".nosex");
+               }
+           }
+
         if (isVcfFile(genotype)) // Transform "vcf" to "transpose"
         {
             if(!plink.vcf2transpose(genotype, transposeFile, maf, mind, geno))
@@ -1853,7 +2708,8 @@ bool CommandLineParser::callEmmaxGwas(QHash<QString, QString> args)
             transformFileFlag = true;
         }
 
-        if (genotype.split(".")[genotype.split(".").length()-1] == "tped")  // Transform "binary" to "transpose"
+        if ((!maf.isNull() || !mind.isNull() || !geno.isNull()) &&
+                genotype.split(".")[genotype.split(".").length()-1] == "tped")  // Transform "binary" to "transpose"
         {
             if (map.isNull())
             {
@@ -1874,23 +2730,30 @@ bool CommandLineParser::callEmmaxGwas(QHash<QString, QString> args)
             {
                 throw runtime_error("process cannot be started");
             }
-            fileReader->completeTfamFromPheno(phenotype, transposeFile+".tfam");
+            transformFileFlag = true;
             //   i think this place still need to add something!!!
         }
+        else
+        {
+             transposeFile = genoFileAbPath + "/" + genoFileBaseName;
+        }
+        fileReader->completeTfamFromPheno(phenotype, transposeFile+".tfam");
+
 
     } catch (runtime_error *re) {
         qDebug() <<  re->what();
         return false;
     }
 
-    try {
+
         Emmax emmax;
-        if (kinship.isNull())        //a little error     linrenhao
+        if (kinship.isNull() && args["emmax_makekin"]=="yes")
            {
              if (!emmax.makeKinship(transposeFile, kinmat))
              {
                  throw runtime_error("Make kinship failed");
              }
+
              int exitCode = this->proc->execute(this->toolpath+"emmax-kin", emmax.getParamList());
              if (exitCode == -1)
              {
@@ -1901,6 +2764,7 @@ bool CommandLineParser::callEmmaxGwas(QHash<QString, QString> args)
              {
                  throw runtime_error("process cannot be started");
              }
+
              if (kinmat == "BN")
              {
                  kinship = genoFileAbPath + "/" + genoFileBaseName+"_tmp" + ".hBN.kinf";
@@ -1911,7 +2775,7 @@ bool CommandLineParser::callEmmaxGwas(QHash<QString, QString> args)
              }
         }
 
-//linrenhao
+
         if (emmax.runGWAS(transposeFile, phenotype, covar, kinship, out+"/"+ProjectName+"_"+pheFileBaseName, kinmat))
         {
             QStringList paralist = emmax.getParamList();
@@ -1928,6 +2792,46 @@ bool CommandLineParser::callEmmaxGwas(QHash<QString, QString> args)
             {
                 throw runtime_error("process cannot be started");
             }
+         }
+       QString plotInputFile;
+        // Correct p value 关联分析之后，对结果P值进行一些变化
+       QString correctionType =args["correction"];
+
+       if (!(correctionType=="no"))// 如果要校正
+       {
+           QString pValFile = out+"/"+ProjectName+"_"+pheFileBaseName+".ps";
+           QString correctedFile = out+"/"+ProjectName+"_"+pheFileBaseName+"_corr.ps";
+
+           // There no header of emmax result file.
+           this->pValCorrect(pValFile, false, correctionType, correctedFile);
+
+           if (!this->checkoutExistence(correctedFile))
+           {
+               qDebug() << "Error", "Gemma corrected error.";
+               return false;
+           }
+
+           if (checkoutExistence(correctedFile))
+           {
+               //            ui->qqmanGwasResultLineEdit->setText(correctedFile);
+   //            emit setLineEditTextSig(ui->qqmanGwasResultLineEdit, correctedFile);
+               plotInputFile = correctedFile;
+               qDebug() << correctedFile;
+           }
+       }
+       else//不校正
+       {
+           if ( !checkoutExistence(out+"/"+ProjectName+"_"+pheFileBaseName+".ps"))
+           {
+               qDebug() << "Error", "Emmax GWAS error." ;
+               return false;
+           }
+           //            ui->qqmanGwasResultLineEdit->setText(out+"/"+name+"_"+pheFileBaseName+".ps");
+   //        emit setLineEditTextSig(ui->qqmanGwasResultLineEdit, out+"/"+name+"_"+pheFileBaseName+".ps");
+           plotInputFile = out+"/"+ProjectName+"_"+pheFileBaseName+".ps";
+           qDebug() <<  out+"/"+ProjectName +"_"+pheFileBaseName+".ps";
+
+       }
 
             QFile file;
             // delete intermidiate file.
@@ -1944,19 +2848,25 @@ bool CommandLineParser::callEmmaxGwas(QHash<QString, QString> args)
             {
                 file.remove(genoFileAbPath+"/"+genoFileBaseName+"_tmp.hIBS.kinf");
             }
+            if (args["isSNPlinkage"]=="yes" && genotype != args["genoFile"])
+            {
+                file.remove(genotype);
+                file.remove(map);
+            }
+
+
+
+
+    this->proc->close();
+
+    //要找到emmax的输出目录 plotinputfile
+
+    if (checkoutExistence(plotInputFile))
+        {
+            drawManhattan(args,plotInputFile); //曼哈顿和qq图都有画
         }
 
 
-    } catch (runtime_error *re) {
-        qDebug() <<  re->what();
-        return false;
-    }
-    this->proc->close();
-
-    //要找到emmax的输出目录
-    QString newdir = out+"/"+ProjectName+"_"+pheFileBaseName;
-    QString resultfile = newdir +".ps" ;
-    drawManhattan(args,resultfile);
     return true;
 }
 
@@ -2595,3 +3505,33 @@ bool CommandLineParser::isVcfFile(QString file) // Just consider filename.
 
     return false;
 }
+bool CommandLineParser::pValCorrect(QString pvalFile, bool header, QString correctType, QString outFile)
+{
+    if (pvalFile.isNull() || correctType.isNull() || outFile.isNull())
+    {
+        return false;
+    }
+
+    QStringList param;
+    // The sequence of param is not changeable
+    param.clear();
+    param.append(this->scriptpath+"qqman/correction.R");
+    param.append(pvalFile);
+    param.append(header ? "TRUE" : "FALSE");
+    param.append(correctType);
+    param.append(outFile);
+    // R in environment path is necessary.
+    int exitCode = this->proc->execute("Rscript", param);
+    this->proc->waitForStarted();
+
+    if (exitCode == -2)
+    {
+        throw runtime_error("process cannot be started");
+    }
+    if (exitCode == -1)
+    {
+        throw runtime_error("process crashes");
+    }
+    this->proc->close();
+}
+

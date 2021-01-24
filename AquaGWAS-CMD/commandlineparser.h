@@ -33,9 +33,10 @@ public:
     void initCmdLineOption();
     void addFilesExecutePermission(QString directory);// add permission
     void runGWAS(QHash<QString, QString> args);
-    void runPCA(QHash<QString,QString > args);        //yangzizi
-    bool callGctaPca(QHash<QString, QString> args);    //yangzizi
-    bool plotPca(QHash<QString, QString> args);        //yangzizi
+    void runPCA(QHash<QString,QString > args);
+    bool completeSnpID(QString genotype);
+    bool callGctaPca(QHash<QString, QString> args);
+    bool plotPca(QHash<QString, QString> args);
 
     bool callPlinkGwas(QHash<QString, QString> args);
     bool callGemmaGwas(QHash<QString, QString> args);
@@ -61,7 +62,8 @@ public:
     bool structuralAnnotation(QHash<QString, QString> args);
     bool annoStep(QHash<QString, QString> args);
     bool functionalAnnotation(QHash<QString, QString> args);
-
+    //correct p value
+    bool pValCorrect(QString pvalFile, bool header, QString correctType, QString outFile);
 private:
     FileReader *fileReader;
     // Association analysis arguments.
@@ -97,11 +99,18 @@ private:
     QCommandLineOption *gwExpo ;
     QCommandLineOption *sgBase ;
     QCommandLineOption *sgExpo ;
-
+    //correct p value
+    QCommandLineOption *correction;
     // gcta detail parameters
    QCommandLineOption *gcta_threadsCmdOp;
    QCommandLineOption *gcta_PCsCmdOp;
    QCommandLineOption *pcaCmdOp;
+   QCommandLineOption *FilterChr_CmdOp;
+   QCommandLineOption *FIDComplete_CmdOp;
+   QCommandLineOption *qualityControl_SNPlinkage;
+   QCommandLineOption *qualityControl_WindowSize;
+   QCommandLineOption *qualityControl_StepLength;
+   QCommandLineOption *qualityControl_r2threshold;
    //structure and functional ANNO detail parameters
    QCommandLineOption *strucAnnoCmdOp;
    QCommandLineOption *gffFileCmdOp;

@@ -28,9 +28,15 @@ public:
     bool makeAvinputAndSnpposFile(QString vcfFilePath, QString pvalFilePath,
                                   QString avinputFilePath, QString snpPosFilePath);
     bool completeTfamFromPheno(QString phenoFilePath, QString tfamFilePath);
+    bool completePedFromPheno(QString phenoFilePath, QString pedFilePath);
     bool completeFIDofTfam(QString fidFilePath, QString tfamFilePath);
     bool completeFIDofPed(QString fidFilePath, QString pedFilePath);
     bool isNumber(QString str);
+    bool filterSNPByChr(QString mapFilePath, QString chrListFilePath, QString snpListFilePath);
+    bool modifyChr(QString file);
+    bool modifyChr(QString srcFilePath, QString dstFilePath);
+    bool completeSnpID(QString filePath);
+    bool isVcfFile(QString const file);
 private:
     QString phenotypeFile;
     QString genotypeFile;

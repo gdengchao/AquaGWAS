@@ -13,10 +13,8 @@ public:
     QString getParamString(void);
     void setParam(QStringList param);
     void setParam(QString param);
-    QString getToolPath(void);
 
 protected:
-//    const QString toolpath;
     QStringList paramlist;
 };
 
