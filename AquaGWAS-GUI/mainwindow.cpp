@@ -173,6 +173,8 @@ void MainWindow::cmdGWASButton_clicked()
     QString sgBase = ui->sgBaseLineEdit->text();
     QString sgExpo = ui->sgExpoLineEdit->text();
 
+    QString gw =gwBase+'e'+gwExpo;
+    QString sg =sgBase+'e'+sgExpo;
     QString cmdlist;
 
     if(tool=="gemma")
@@ -180,14 +182,14 @@ void MainWindow::cmdGWASButton_clicked()
         QMap<QString, QString> moreParam = this->gemmaParamWidget->getCurrentParam();
         //  QString cmdlist;
         //correct p-value
-        QString correctionType = this->emmaxParamWidget->getCorrectionType();
+        QString correctionType = this->gemmaParamWidget->getCorrectionType();
         if(correctionType=="")
         {
             correctionType="no";
         }
 
-        cmdlist.append("-A -T "+tool+" -M "+model+" --name "+name+" -p "+phenotype+" --kinmatrix_gemma "+moreParam["kinmatrix"]
-                +" -g "+genotype+" -o "+out+" --makekin_gemma "+moreParam["makekin"]+" --correction "+correctionType);
+        cmdlist.append("-A -T "+tool+" -M "+model+" --name "+name+" -p "+phenotype+" --mkinmat "+moreParam["makekin"]
+                +" -g "+genotype+" -o "+out+" --kinmat "+moreParam["kinmatrix"]+" --correct "+correctionType);
         if(model=="LMM")
         {
             cmdlist.append(" --lmmtest " +moreParam["lmmtest"]);
@@ -196,7 +198,10 @@ void MainWindow::cmdGWASButton_clicked()
         {
             cmdlist.append(" --bslmmmodel " +moreParam["bslmmmodel"]);
         }
-
+        if(!kinship.isNull())
+        {
+            cmdlist.append(" -k "+kinship);
+        }
         if (!maf.isNull())
         {
             cmdlist.append(" --maf "+maf);
@@ -254,8 +259,8 @@ void MainWindow::cmdGWASButton_clicked()
         //  QString cmdlist;
 
         cmdlist.append("-A -T "+tool+" --name "+name+" -M "+model+" -p "+phenotype
-                       +" -g "+genotype+" -o "+out+" --makekin_emmax "+moreParam["makekin"]+" --kinmatrix_emmax "+moreParam["kinmatrix"]
-                +" --correction "+correctionType);
+                       +" -g "+genotype+" -o "+out+" --mkinmat "+moreParam["makekin"]+" --kinmat "+moreParam["kinmatrix"]
+                +" --correct "+correctionType);
         if(!kinship.isNull())
         {
             cmdlist.append(" -k "+kinship);
@@ -280,18 +285,18 @@ void MainWindow::cmdGWASButton_clicked()
         // emit runningMsgWidgetAppendText(cmdlist);
 
     }
-    cmdlist.append(" --gwBase "+gwBase+" --gwExpo "+gwExpo+" --sgBase "+sgBase+" --sgExpo "+sgExpo);
+    cmdlist.append(" --gw "+gw+" --sg "+sg);
     if (qualityControl->isLinkageFilterNeeded())//如果QC小窗选了yes，则要产生相应的命令
     {
         QString winSize, stepLen, r2Threshold;
         this->qualityControl->getLinkageFilterType(winSize, stepLen, r2Threshold);
-        cmdlist.append(" --qualityControl_SNPlinkage");
-        cmdlist.append(" --qualityControl_Windowsize "+winSize+" --qualityControl_StepLength "+stepLen+" --qualityControl_r2threshold "+r2Threshold);
+      //  cmdlist.append(" --qualityControl_SNPlinkage");
+        cmdlist.append(" --winsize "+winSize+" --slen "+stepLen+" --r2th "+r2Threshold);
     }
     emit runningMsgWidgetClearText();
     emit runningMsgWidgetAppendText(cmdlist);
     // -A -T emmax --name pro2 -M EMMA -p /home/zhi/Desktop/data_renhao/sex.phe -g /home/zhi/Desktop/data_renhao/y2.tped
-    // -k /home/zhi/Desktop/data_renhao/y2.hBN.kinf  --kinmatrix_emmax BN -o /home/zhi/Desktop/out
+
 
     this->runningFlag = false;
 }
@@ -327,33 +332,33 @@ void MainWindow::pca_ld_cmdButton_clicked()//当点击pca/ld界面的cmdgenerate
     QString PCAcmdlist;
     PCAcmdlist.append("--pca ");
     PCAcmdlist.append("--name "+name);
-    PCAcmdlist.append(" -g "+genotype+" --PCs "+PCs+" --threads "+Threads+" -o "+out);
+    PCAcmdlist.append(" -g "+genotype+" --pcs "+PCs+" --threads "+Threads+" -o "+out);
     if (qualityControl->isLinkageFilterNeeded())//如果QC小窗选了yes，则要产生相应的命令
     {
         QString winSize, stepLen, r2Threshold;
         this->qualityControl->getLinkageFilterType(winSize, stepLen, r2Threshold);
-        PCAcmdlist.append(" --qualityControl_SNPlinkage");
-        PCAcmdlist.append(" --qualityControl_Windowsize "+winSize+" --qualityControl_StepLength "+stepLen+" --qualityControl_r2threshold "+r2Threshold);
+      //  PCAcmdlist.append(" --qualityControl_SNPlinkage");
+        PCAcmdlist.append(" --winsize "+winSize+" --slen "+stepLen+" --r2th "+r2Threshold);
     }
     //检查filterchr框是否被选中
     bool filterChrFlag = ui->filterChrRadioButton->isChecked();
     if (filterChrFlag)
     {
         QString listForChr = ui->filterChrFileLineEdit->text();
-        PCAcmdlist.append(" --FilterChr "+listForChr);
+        PCAcmdlist.append(" --filchr "+listForChr);
     }
     //检查fidcomplete框是否被选中
     bool completeFidFlag = ui->compleFIDRadioButton->isChecked();
     if (completeFidFlag)
     {
         QString fidFile = ui->fidFileLineEdit->text();
-        PCAcmdlist.append(" --FIDComplete "+fidFile);
+        PCAcmdlist.append(" --fidcom "+fidFile);
     }
 
 
     QString LDcmdlist;
     LDcmdlist.append("--LD ");
-    LDcmdlist.append("-g "+genotype+" --name "+name+" -o "+out+" --LDplot yes ");
+    LDcmdlist.append("-g "+genotype+" --name "+name+" -o "+out+" --ldplot yes ");
     if(ui->yesLDByFamRadioButton->isChecked())
     {
         LDcmdlist.append("--analysis yes");
@@ -382,22 +387,22 @@ void MainWindow::pca_ld_cmdButton_clicked()//当点击pca/ld界面的cmdgenerate
     {
         QString winSize, stepLen, r2Threshold;
         this->qualityControl->getLinkageFilterType(winSize, stepLen, r2Threshold);
-        LDcmdlist.append(" --qualityControl_SNPlinkage");
-        LDcmdlist.append(" --qualityControl_Windowsize "+winSize+" --qualityControl_StepLength "+stepLen+" --qualityControl_r2threshold "+r2Threshold);
+      //  LDcmdlist.append(" --qualityControl_SNPlinkage");
+        LDcmdlist.append(" --winsize "+winSize+" --slen "+stepLen+" --r2th "+r2Threshold);
     }
     //检查filterchr框是否被选中
     filterChrFlag = ui->filterChrRadioButton->isChecked();
     if (filterChrFlag)
     {
         QString listForChr = ui->filterChrFileLineEdit->text();
-        LDcmdlist.append(" --FilterChr "+listForChr);
+        LDcmdlist.append(" --filchr "+listForChr);
     }
     //检查fidcomplete框是否被选中
     completeFidFlag = ui->compleFIDRadioButton->isChecked();
     if (completeFidFlag)
     {
         QString fidFile = ui->fidFileLineEdit->text();
-        LDcmdlist.append(" --FIDComplete "+fidFile);
+        LDcmdlist.append(" --fidcom "+fidFile);
     }
 
 
@@ -422,11 +427,7 @@ void MainWindow::pca_ld_cmdButton_clicked()//当点击pca/ld界面的cmdgenerate
 
 void MainWindow::annotationCmdButton_clicked()
 {
-    if (this->runningFlag)
-    {
-        QMessageBox::information(nullptr, "Error", "A project is running now.");
-        return;
-    }
+
     QString cmdlist;
 
     QString name = workDirectory->getProjectName().replace(' ', "\\ ");;
@@ -440,17 +441,27 @@ void MainWindow::annotationCmdButton_clicked()
     QString funcAnnoRefFilePath = ui->funcAnnoRefFileLineEdit->text().replace(' ', "\\ ");;
 
     //step cmd
+    if(checkoutExistence(pvalFile)&& !(checkoutExistence(vcfFile)))//如果只输入p-value文件，而没有基因型文件，则报错
+    {
+        emit setMsgBoxSig("Error", "if you want to step .vcf file is necessary! ");
+        return;
+    }
+    bool step_flag=0;
     if(checkoutExistence(pvalFile)&&checkoutExistence(vcfFile))//两个文件都有输入说明要做step
     {
+        step_flag=1;
         QString thBase = ui->annoThBaseLineEdit->text();    // Threshold base number.
         QString thExpo = ui->annoThExpoLineEdit->text();    // Threshold exponent.
+        QString threshold = thBase+'e'+thExpo; //如1e-5
+
+
         QFileInfo vcfFileInfo(vcfFile);
         QString vcfFileAbPath = vcfFileInfo.absolutePath();
         QString vcfFileBaseName = vcfFileInfo.baseName();
         avinputFilePath = vcfFileAbPath + "/" + vcfFileBaseName + ".avinput";   // For input of structural annotaion
         snpPosFilePath = vcfFileAbPath + "/" + vcfFileBaseName + "_SNPpos";     // For input of functional annotation
         cmdlist.append("--step");
-        cmdlist.append(" --pvalue "+pvalFile+" -g "+vcfFile+" --thBase "+thBase+" --thExpo "+thExpo);
+        cmdlist.append(" --pval "+pvalFile+" -g "+vcfFile+" --thre "+threshold);
     }
 
 
@@ -464,40 +475,56 @@ void MainWindow::annotationCmdButton_clicked()
     }
     if (refGeneFilePath.isNull() || refGeneFilePath.isEmpty())
     {
-        emit setMsgBoxSig("Error", "Gff or Gtf file is necessary! ");
+        emit setMsgBoxSig("Error", "if you want to do structural anno Gff or Gtf file is necessary! ");
         return;
         //  throw -1;
     }
     if (refSeqFilePath.isNull() || refSeqFilePath.isEmpty())
     {
-        emit setMsgBoxSig("Error", "Reference sequence file is necessary! ");
+        emit setMsgBoxSig("Error", "if you want to do structural anno Reference sequence file is necessary! ");
         return;
         // throw -1;
     }
-    this->runningFlag = true;
-    //    ui->annotationRunButton->setEnabled(false);
 
-    cmdlist.append(" --strucAnno");
-    cmdlist.append(" --name "+name+" --gff "+refGeneFilePath+" --fas "+refSeqFilePath+" --avin "+avinputFilePath
+
+    cmdlist.append(" --struanno");
+    cmdlist.append(" --name "+name+" --refgene "+refGeneFilePath+" --refseq "+refSeqFilePath
                    +" -o "+out);
-    // --strucAnno --name pro2 --gff /home/zhi/Desktop/data_yzz/structure_annotation/Hdhv3.changeID.gff3
-    //--fas /home/zhi/Desktop/data_yzz/structure_annotation/Hdhv3.changeID.fa
-    //--avin /home/zhi/Desktop/data_yzz/structure_annotation/input_for_annovar1.txt -o /home/zhi/Desktop/out
+    if(step_flag==0)//如果没有做step，才输出avin命令，如果有做step，就不输出avin命令，因为cmd代码里会自动生成avin结果的路径
+    {
+        cmdlist.append(" --avin "+avinputFilePath);
+    }
+
+
     QFileInfo fileInfo(refGeneFilePath);
     QString baseName = fileInfo.baseName();
     QString outFilePath = out + "/" + name + "_" + baseName;//此为structural anno的结果路径,其中两个结果作为fun anno的输入
     QString varFuncFilePath = outFilePath+".variant_function";
     QString exVarFuncFilePath = outFilePath+".exonic_variant_function";
 
+    if ((!(funcAnnoRefFilePath.isNull()||funcAnnoRefFilePath.isEmpty())) )//如果用户输入了funcannoRef文件，说明想做funanno，则检查是否有snp_pos文件
+    {
+        if(snpPosFilePath.isNull()||snpPosFilePath.isEmpty())
+        {
+            emit setMsgBoxSig("Error", "if you want to do functional anno, SNP position file is necessary! ");
+
+            return;
+        }
+
+    }
 
     if ((!(snpPosFilePath.isNull()||snpPosFilePath.isEmpty())) &&
             (!(funcAnnoRefFilePath.isNull()||funcAnnoRefFilePath.isEmpty())) &&
             (!(varFuncFilePath.isNull()||varFuncFilePath.isNull())) &&
             (!(exVarFuncFilePath.isNull()||exVarFuncFilePath.isEmpty())))//如果有这4个文件说明要做functional anno
     {
-        cmdlist.append(" --funcAnno");
-        cmdlist.append(" -o "+out+" --name "+name+" --snp_pos "+snpPosFilePath+" --funcAnnoRef "+funcAnnoRefFilePath
-                       +" --var "+varFuncFilePath+" --exvar "+exVarFuncFilePath);
+
+        cmdlist.append(" --funcanno "+funcAnnoRefFilePath);
+                   //    +" --var "+varFuncFilePath+" --exvar "+exVarFuncFilePath)
+        if(step_flag==0)//如果没有做step，才输出snppos命令，如果有做step，就不输出snppos命令，因为cmd代码里会自动生成snppos结果的路径
+        {
+            cmdlist.append(" --snppos "+snpPosFilePath);
+        }
     }
     /*    --funcAnno -o /home/zhi/Desktop/out --name pro1
      --snp_pos /home/zhi/Desktop/data_renhao/fan_sig_pos
@@ -506,9 +533,9 @@ void MainWindow::annotationCmdButton_clicked()
      --exvar /home/zhi/Desktop/out/pro2_Hdhv3.exonic_variant_function */
     emit runningMsgWidgetClearText();
     emit runningMsgWidgetAppendText(cmdlist);
-    this->runningFlag = false;
 
 }
+
 
 /**
  * @brief MainWindow::on_pheFileToolButton_clicked

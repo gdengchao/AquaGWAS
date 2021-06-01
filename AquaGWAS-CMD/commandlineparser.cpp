@@ -30,62 +30,56 @@ void CommandLineParser::initCmdLineOption()
                             << "A" << "assoc", "Run association analysis");//括号里参数的顺序按照name，description，valueName，defaultValue的顺序
     this->pcaCmdOp = new QCommandLineOption(QStringList()                   //valueName只是个形式而已，取什么名字都可以,它的存在就是告诉系统这个命令后面是带有参数的
                                << "pca" << "pca", "Run component analysis");
-    this->gwBase =new QCommandLineOption(QStringList()
-                          << "gwBase" , "set Genomewideline base(Manhattan plot)","gwBase","5");
-    this->gwExpo =new QCommandLineOption(QStringList()
-                          << "gwExpo" , "set Genomewideline Expo(Manhattan plot)","gwExpo","-8");
-    this->sgBase =new QCommandLineOption(QStringList()
-                          << "sgBase" , "set Suggestiveline Expo(Manhattan plot)","sgBase","1");
-    this->sgExpo =new QCommandLineOption(QStringList()
-                          << "sgExpo" , "set Genomewideline Expo(Manhattan plot)","sgExpo","-5");
-    this->thBase =new QCommandLineOption(QStringList()
-                          << "thBase" , "set thresholdBase(anno)","thBase","1");
-    this->thExpo =new QCommandLineOption(QStringList()
-                          << "thExpo" , "set thresholdExpo(anno)","thExpo","-5");
+    this->gw =new QCommandLineOption(QStringList()
+                          << "gw" , "set Genomewideline(Manhattan plot)","gw","5e-8");
+    this->sg =new QCommandLineOption(QStringList()
+                          << "sg" , "set Suggestiveline(Manhattan plot)","sg","1e-5");
+
+    this->threshold =new QCommandLineOption(QStringList()
+                          << "thre" , "set threshold in step (anno)","threshold","1e-5");
+
     this->snp_pos =new QCommandLineOption(QStringList()
-                          << "snp_pos" , "set snpPosFilepath(anno)","snp_pos");
+                          << "snppos" , "set snpPosFilepath(anno)","snp_pos");
     this->funcAnnoRef =new QCommandLineOption(QStringList()
-                          << "funcAnnoRef" , "set funcAnnoRefFilepath(anno)","funcAnnoRef");
+                          << "funcanno" , "set funcAnnoRefFilepath(anno)","funcAnnoRef");
     this->var =new QCommandLineOption(QStringList()
                           << "var" , "set varFuncFilePath(anno)","var");
     this->exvar =new QCommandLineOption(QStringList()
                           << "exvar" , "set exVarFuncFilePath(anno)","exvar");
 
-    this->funcAnnoCmdOp=new QCommandLineOption(QStringList()
-                          << "funcAnno" , "Run functional Annotation(anno)");
+
     this->stepAnnoCmdOp= new QCommandLineOption(QStringList()
                     << "step" , "Run annostep(anno)");
     this->pvalFileCmdOp= new QCommandLineOption(QStringList()
-                           << "pvalue" , "inputPvalueFile(anno)","pvalueFile");
+                           << "pval" , "inputPvalueFile(anno)","pvalueFile");
     this->strucAnnoCmdOp = new QCommandLineOption(QStringList()
-                               << "strucAnno" << "strucAnno(anno)", "Run structural Annotation");
+                               << "struanno" , "Run structural Annotation");
     this->gffFileCmdOp = new QCommandLineOption(QStringList()
-                               << "gff" << "gffFile", "gffFile(anno)", "gffFile", "");
+                               << "refgene" << "gffFile", "gffFile(anno)", "gffFile", "");
     this->fastaFileCmdOp = new QCommandLineOption(QStringList()
-                               << "fas" << "fastaFile", "fastaFile(anno)", "fastaFile", "");
+                               << "refseq" << "fastaFile", "fastaFile(anno)", "fastaFile", "");
     this->avinputCmdOp = new QCommandLineOption(QStringList()
                                << "avin"<< "avinput", "avinput(anno)", "avinput", "");
 
     this->pcaCmdOp = new QCommandLineOption(QStringList()
                                << "pca" << "pca", "Run component analysis");
     this->gcta_PCsCmdOp =  new QCommandLineOption(QStringList()
-                                << "PCs", "PCs(gcta)", "PCs", "");
+                                << "pcs", "PCs(gcta)", "PCs", "");
     this->gcta_threadsCmdOp =  new QCommandLineOption(QStringList()
                                 << "threads", "threads(gcta)", "threads", "1");
-    this->gcta_threadsCmdOp =  new QCommandLineOption(QStringList()
-                                << "threads", "threads(gcta)", "threads", "1");
+
     this->FilterChr_CmdOp =  new QCommandLineOption(QStringList()
-                                << "FilterChr", "whether filter chr", "FilterChr", "");
+                                << "filchr", "whether filter chr", "FilterChr", "");
     this->FIDComplete_CmdOp =  new QCommandLineOption(QStringList()
-                                << "FIDComplete", "whether complete FID", "valuename", "");
+                                << "fidcom", "whether complete FID", "valuename", "");
     this->qualityControl_SNPlinkage =  new QCommandLineOption(QStringList()
                                 << "qualityControl_SNPlinkage", "whether SNP linkage");
     this->qualityControl_StepLength =  new QCommandLineOption(QStringList()
-                                << "qualityControl_StepLength", "StepLength value", "valuename", "");
+                                << "slen", "StepLength value", "valuename", "");
     this->qualityControl_WindowSize =  new QCommandLineOption(QStringList()
-                                << "qualityControl_Windowsize", "WindowSize value", "valuename", "");
+                                << "winsize", "WindowSize value", "valuename", "");
     this->qualityControl_r2threshold =  new QCommandLineOption(QStringList()
-                                << "qualityControl_r2threshold", "r2threshold value", "valuename", "");
+                                << "r2th", "r2threshold value", "valuename", "");
 
     this->toolCmdOp = new QCommandLineOption(QStringList()
                             << "T" << "tool", "Set association tool", "toolSelector", "");
@@ -110,9 +104,9 @@ void CommandLineParser::initCmdLineOption()
     this->mindCmdOp = new QCommandLineOption(QStringList()
                             << "mind", "Missingness of individual", "mind", "");
     this->gemma_makeKinCmdOp = new QCommandLineOption(QStringList()
-                            << "makekin_gemma", "whether Make kinship auto yes/no (gemma)", "makekin", "yes");
+                            << "mkinmat", "whether Make kinship auto yes/no (gemma)", "makekin", "yes");
     this->gemma_kinMatCmdOp = new QCommandLineOption(QStringList()
-                            << "kinmatrix_gemma", "Kinship file type:1.centered relatedness matrix 2.standardized relatedness matrix(gemma)", "kinmatrix", "1");
+                            << "kinmat", "Kinship file type:1.centered relatedness matrix 2.standardized relatedness matrix(gemma)", "kinmatrix", "1");
     this->gemma_lmmTestCmdOp = new QCommandLineOption(QStringList()
                             << "lmmtest", "choose LMM Test:1-4(gemma)", "lmmtest", "");
     this->gemma_bslmmModelCmdOp = new QCommandLineOption(QStringList()
@@ -127,15 +121,15 @@ void CommandLineParser::initCmdLineOption()
     this->ProjectNameCmdOp = new QCommandLineOption(QStringList()
                  << "name" , "set project name","ProjectName",""); //调用方式 --name pro1
     this->LD_plot = new QCommandLineOption(QStringList()
-                 << "LDplot" , "whether plot the LD analysis result(yes/no)","LD_plot",""); //调用方式 --LDplot yes/no
-    // linrenhao
+                 << "ldplot" , "whether plot the LD analysis result(yes/no)","LD_plot",""); //调用方式 --ldplot yes/no
+
     this->emmax_makeKinCmdOp = new QCommandLineOption(QStringList()
-                            <<  "makekin_emmax","Make kinship auto(emmax)", "makekin", "");
+                            <<  "mkinmat","Make kinship auto(emmax) input yes or no", "makekin", "");
     this->emmax_kinMatCmdOp = new QCommandLineOption(QStringList()
-                            << "kinmatrix_emmax", "Kinship file type(emmax)", "kinmatrix", "BN");
+                            << "kinmat", "Kinship file type(emmax) input IBS or BN", "kinmatrix", "BN");
     // Correct p value
     this->correction = new QCommandLineOption(QStringList()
-                 << "correction" , "select correctiontype","correction","");
+                 << "correct" , "select correctiontype","correction","no");
     this->addOption(*assocCmdOp);
     this->addOption(*toolCmdOp);
     this->addOption(*modelCmdOp);       //这部分主要是添加选项命令到命令行中
@@ -166,11 +160,10 @@ void CommandLineParser::initCmdLineOption()
    this->addOption(*fastaFileCmdOp);
    this->addOption(*avinputCmdOp);
     this->addOption(*pcaCmdOp);
-    this->addOption(*funcAnnoCmdOp);
     this->addOption(*stepAnnoCmdOp);
     this->addOption(*pvalFileCmdOp);
-    this->addOption(*thBase);
-    this->addOption(*thExpo);
+    this->addOption(*threshold);
+
     this->addOption(*snp_pos);
     this->addOption(*funcAnnoRef);
     this->addOption(*var);
@@ -182,10 +175,9 @@ void CommandLineParser::initCmdLineOption()
     this->addOption(*FilterChr_CmdOp);
     this->addOption(*FIDComplete_CmdOp);
 
-    this->addOption(*gwBase);
-    this->addOption(*gwExpo);
-    this->addOption(*sgBase);
-    this->addOption(*sgExpo);
+    this->addOption(*gw);
+    this->addOption(*sg);
+
 
     this->addOption(*correction);
 }
@@ -225,20 +217,17 @@ void CommandLineParser::delCmdLineOption()
     delete fastaFileCmdOp;
     delete avinputCmdOp;
 
-     delete funcAnnoCmdOp;
-     delete stepAnnoCmdOp;
+    delete stepAnnoCmdOp;
     delete pvalFileCmdOp;
 
-    delete thBase;
-    delete thExpo;
+    delete threshold;
     delete snp_pos;
     delete funcAnnoRef;
     delete var;
     delete exvar;
-    delete gwBase;
-    delete gwExpo;
-    delete sgBase;
-    delete gwExpo;
+    delete gw ;
+    delete sg ;
+
     delete qualityControl_SNPlinkage;
     delete qualityControl_StepLength;
     delete qualityControl_WindowSize;
@@ -340,43 +329,30 @@ QHash<QString, QString> CommandLineParser::getArgsFromCmd()
         // Allow to not set, but must have argument if set.
         if (this->isSet(*correction) && this->value(*correction).isNull())
         {
-            throw invalid_argument("Invalid argument --correction");
+            throw invalid_argument("Invalid argument --correct");
         }
         else if (this->isSet(*correction) && !this->value(*correction).isNull())
         {
             argHash["correction"] = this->value(*correction);
         }
-        if (this->isSet(*gwBase) && this->value(*gwBase).isNull())
+        if (this->isSet(*gw) && this->value(*gw).isNull())
         {
-            throw invalid_argument("Invalid argument --gwBase");
+            throw invalid_argument("Invalid argument --gw");
         }
-        else if (this->isSet(*gwBase) && !this->value(*gwBase).isNull())
-        {
-            argHash["gwBase"] = this->value(*gwBase);
+        else if (this->isSet(*gw) && !this->value(*gw).isNull())
+        {                                                  //gw sg的值类似 5e-8 1e-5 ，需要把e去掉，分割出来5和-8
+            argHash["gwBase"] = this->value(*gw).mid(0,1);//Qstring类有mid函数，可以分割字符串，第一个是起始位置，第二个是截取的长度
+            argHash["gwExpo"] = this->value(*gw).mid(2);//如果第二个参数省略，则默认到字符串结束为止
         }
-        if (this->isSet(*gwExpo) && this->value(*gwExpo).isNull())
+
+        if (this->isSet(*sg) && this->value(*sg).isNull())
         {
-            throw invalid_argument("Invalid argument --gwExpo");
+            throw invalid_argument("Invalid argument --sg");
         }
-        else if (this->isSet(*gwExpo) && !this->value(*gwExpo).isNull())
+        else if (this->isSet(*sg) && !this->value(*sg).isNull())
         {
-            argHash["gwExpo"] = this->value(*gwExpo);
-        }
-        if (this->isSet(*sgBase) && this->value(*sgBase).isNull())
-        {
-            throw invalid_argument("Invalid argument --sgBase");
-        }
-        else if (this->isSet(*sgBase) && !this->value(*sgBase).isNull())
-        {
-            argHash["sgBase"] = this->value(*sgBase);
-        }
-        if (this->isSet(*sgExpo) && this->value(*sgExpo).isNull())
-        {
-            throw invalid_argument("Invalid argument --sgExpo");
-        }
-        else if (this->isSet(*sgExpo) && !this->value(*sgExpo).isNull())
-        {
-            argHash["sgExpo"] = this->value(*sgExpo);
+            argHash["sgBase"] = this->value(*sg).mid(0,1);
+            argHash["sgExpo"] = this->value(*sg).mid(2);
         }
 
         if (this->isSet(*mapFileCmdOp) && this->value(*mapFileCmdOp).isNull()) //注意这里map和协变量文件的判断逻辑变了，因为这两个不是必须的，
@@ -399,7 +375,7 @@ QHash<QString, QString> CommandLineParser::getArgsFromCmd()
 
         if (this->isSet(*kinFileCmdOp) && this->value(*kinFileCmdOp).isNull())
         {
-            throw invalid_argument("Invalid argument -- kinship file");
+            throw invalid_argument("Invalid argument --kinfile");
         }
         else if (this->isSet(*kinFileCmdOp) && !this->value(*kinFileCmdOp).isNull())
         {
@@ -410,13 +386,13 @@ QHash<QString, QString> CommandLineParser::getArgsFromCmd()
         // Gemma specific arguments.
         if (argHash["tool"] == "gemma")
         {
-            if (this->value(*gemma_makeKinCmdOp)=="yes"||this->value(*gemma_makeKinCmdOp)=="no") //不管用户有没有设置 不是0就是1
+            if (this->value(*gemma_makeKinCmdOp)=="yes"||this->value(*gemma_makeKinCmdOp)=="no") //不管用户有没有设置 不是yes就是no
             {
                 argHash["gemma_makekin"] = this->value(*gemma_makeKinCmdOp);//如果用户没有设置默认是1 有设置就按设置值来
             }
             else
             {
-                throw invalid_argument("Invalid argument --makekin_gemma please input yes or no");
+                throw invalid_argument("Invalid argument --mkinmat please input yes or no");
             }
 
             if (this->value(*gemma_kinMatCmdOp)=='1'||this->value(*gemma_kinMatCmdOp)=='2')//不管用户有没有设置不是1就是2
@@ -425,7 +401,7 @@ QHash<QString, QString> CommandLineParser::getArgsFromCmd()
             }
             else
             {
-                throw invalid_argument("Invalid argument --kinmatrix please input 1 or 2");
+                throw invalid_argument("Invalid argument --kinmat please input 1 or 2");
             }
 
             if (this->isSet(*gemma_lmmTestCmdOp) && this->value(*gemma_lmmTestCmdOp).isNull())
@@ -457,11 +433,11 @@ QHash<QString, QString> CommandLineParser::getArgsFromCmd()
         }
 
         // Emmax specific arguments.
-        if (argHash["tool"] == "emmax")                 //linrenhao
+        if (argHash["tool"] == "emmax")
         {
             if (this->isSet(*emmax_makeKinCmdOp) && this->value(*emmax_makeKinCmdOp).isNull())
             {
-                throw invalid_argument("Invalid argument -- emmax_makekin");
+                throw invalid_argument("Invalid argument --mkinmat");
             }
             else if (this->isSet(*emmax_makeKinCmdOp) && !this->value(*emmax_makeKinCmdOp).isNull())
             {
@@ -470,7 +446,7 @@ QHash<QString, QString> CommandLineParser::getArgsFromCmd()
 
             if (this->isSet(*emmax_kinMatCmdOp) && this->value(*emmax_kinMatCmdOp).isNull())
             {
-                throw invalid_argument("Invalid argument -- emmax_kinmat");
+                throw invalid_argument("Invalid argument --kinmat");
             }
             else if (this->isSet(*emmax_kinMatCmdOp) && !this->value(*emmax_kinMatCmdOp).isNull())
             {
@@ -628,13 +604,13 @@ QHash<QString, QString> CommandLineParser::getArgsFromCmd()
         argHash["FIDCompleteFlag"] = true;
         argHash["FIDCompleteValue"] = this->value(*FIDComplete_CmdOp);
     }
-    if (this->isSet(*qualityControl_SNPlinkage))  //project界面里质量控制的小窗
+    if (this->isSet(*qualityControl_WindowSize)&&this->isSet(*qualityControl_StepLength)&&this->isSet(*qualityControl_r2threshold) )//(this->isSet(*qualityControl_SNPlinkage))  //project界面里质量控制的小窗
     {
         argHash["isSNPlinkage"] = "yes";
 
         if (!this->isSet(*qualityControl_WindowSize) || this->value(*qualityControl_WindowSize).isNull())
         {
-            throw invalid_argument("Invalid argument --qualityControl_WindowSize");//必须要设置windowsize的值
+            throw invalid_argument("Invalid argument --winsize");//必须要设置windowsize的值
         }
         else
         {
@@ -642,7 +618,7 @@ QHash<QString, QString> CommandLineParser::getArgsFromCmd()
         }
         if (!this->isSet(*qualityControl_StepLength) || this->value(*qualityControl_StepLength).isNull())
         {
-            throw invalid_argument("Invalid argument --qualityControl_StepLength");//必须要设置StepLength的值
+            throw invalid_argument("Invalid argument --slen");//必须要设置StepLength的值
         }
         else
         {
@@ -650,7 +626,7 @@ QHash<QString, QString> CommandLineParser::getArgsFromCmd()
         }
         if (!this->isSet(*qualityControl_r2threshold) || this->value(*qualityControl_r2threshold).isNull())
         {
-            throw invalid_argument("Invalid argument --qualityControl_r2threshold");//必须要设置r2threshold的值
+            throw invalid_argument("Invalid argument --r2th");//必须要设置r2threshold的值
         }
         else
         {
@@ -660,34 +636,32 @@ QHash<QString, QString> CommandLineParser::getArgsFromCmd()
 
     }
 
+    bool step_flag=0;
     if (this->isSet(*stepAnnoCmdOp))
     {
+        step_flag=1;
         argHash["stepAnno"] = nullptr;
 
         if (!this->isSet(*pvalFileCmdOp) || this->value(*pvalFileCmdOp).isNull())
         {
-            throw invalid_argument("Invalid argument -- pvalue");
+            throw invalid_argument("Invalid argument --pval");
         }
         else
         {
             argHash["pvalueFile"] = this->value(*pvalFileCmdOp);
+
         }
-        if (!this->isSet(*thBase) || this->value(*thBase).isNull())
+        //anno部分 step要设置阈值 threshold
+        if (!this->isSet(*threshold) || this->value(*threshold).isNull())
         {
-            throw invalid_argument("Invalid argument --thBase");
+            throw invalid_argument("Invalid argument --thre");
         }
         else
         {
-            argHash["thBase"] = this->value(*thBase);
+            argHash["thBase"] = this->value(*threshold).mid(0,1);//和前面gw一样，对字符串进行分割
+            argHash["thExpo"] = this->value(*threshold).mid(2);
         }
-        if (!this->isSet(*thExpo) || this->value(*thExpo).isNull())
-        {
-            throw invalid_argument("Invalid argument --thExpo");
-        }
-        else
-        {
-            argHash["thExpo"] = this->value(*thExpo);
-        }
+
         if (!this->isSet(*genoFileCmdOp) || this->value(*genoFileCmdOp).isNull())
         {
             throw invalid_argument("Invalid argument -g");
@@ -696,40 +670,54 @@ QHash<QString, QString> CommandLineParser::getArgsFromCmd()
         {
             argHash["genoFile"] = this->value(*genoFileCmdOp);
         }
+        //如果有做step，会生成avinput和snp—pos两个结果文件，这里自动生成两个文件的路径，方便用户手动输入cmd的时候不用输入这两个文件的路径
+        QString vcfFile = this->value(*genoFileCmdOp);
+        QFileInfo vcfFileInfo(vcfFile);
+        QString vcfFileAbPath = vcfFileInfo.absolutePath();
+        QString vcfFileBaseName = vcfFileInfo.baseName();
+        argHash["avinput"] = vcfFileAbPath + "/" + vcfFileBaseName + ".avinput";   // For input of structural annotaion ;
+        argHash["snpPosFilePath"] = vcfFileAbPath + "/" + vcfFileBaseName + "_SNPpos";     // For input of functional annotation
+
     }
 
+    bool strucanno_flag=0;
     if (this->isSet(*strucAnnoCmdOp))
        {
+           strucanno_flag=1;
            argHash["strucAnno"] = nullptr;
-           if (this->isSet(*gffFileCmdOp) && this->value(*gffFileCmdOp).isNull())
+           if (!this->isSet(*gffFileCmdOp) || this->value(*gffFileCmdOp).isNull())
            {
-               throw invalid_argument("Invalid argument -- gffFile");
+               throw invalid_argument("Invalid argument --refgene");
            }
            else if (this->isSet(*gffFileCmdOp) && !this->value(*gffFileCmdOp).isNull())
            {
                argHash["gffFile"] = this->value(*gffFileCmdOp);
            }
 
-           if (this->isSet(*fastaFileCmdOp) && this->value(*fastaFileCmdOp).isNull())
+           if (!this->isSet(*fastaFileCmdOp) || this->value(*fastaFileCmdOp).isNull())
            {
-               throw invalid_argument("Invalid argument -- fastaFile");
+               throw invalid_argument("Invalid argument --refseq");
            }
            else if (this->isSet(*fastaFileCmdOp) && !this->value(*fastaFileCmdOp).isNull())
            {
                argHash["fastaFile"] = this->value(*fastaFileCmdOp);
            }
 
-           if (this->isSet(*avinputCmdOp) && this->value(*avinputCmdOp).isNull())
+           if(step_flag==0)//如果没有做step，则要检查是否有输入avin命令
            {
-               throw invalid_argument("Invalid argument -- avinput");
+               if (!this->isSet(*avinputCmdOp) || this->value(*avinputCmdOp).isNull())
+               {
+                   throw invalid_argument("Invalid argument --avin");
+               }
+               else if (this->isSet(*avinputCmdOp) && !this->value(*avinputCmdOp).isNull())
+               {
+                   argHash["avinput"] = this->value(*avinputCmdOp);
+               }
            }
-           else if (this->isSet(*avinputCmdOp) && !this->value(*avinputCmdOp).isNull())
-           {
-               argHash["avinput"] = this->value(*avinputCmdOp);
-           }
+
            if (!this->isSet(*outCmdOp) || this->value(*outCmdOp).isNull())
            {
-               throw invalid_argument("Invalid argument -- out");
+               throw invalid_argument("Invalid argument --out");
            }
            else
            {
@@ -744,27 +732,46 @@ QHash<QString, QString> CommandLineParser::getArgsFromCmd()
            {
                argHash["ProjectName"] = this->value(*ProjectNameCmdOp);
            }
+
+           //有做strucanno的话，自动生成两个结果文件的路径，避免用户输入繁琐
+           QString refGeneFilePath =this->value(*gffFileCmdOp);
+           QFileInfo fileInfo(refGeneFilePath);
+           QString baseName = fileInfo.baseName();
+           QString outFilePath = argHash["out"] + "/" + argHash["ProjectName"] + "_" + baseName;//此为structural anno的结果路径,其中两个结果作为fun anno的输入
+           QString varFuncFilePath = outFilePath+".variant_function";
+           QString exVarFuncFilePath = outFilePath+".exonic_variant_function";
+           argHash["exVarFuncFilePath"] = exVarFuncFilePath;
+           argHash["varFuncFilePath"] = varFuncFilePath;
        }
 
-    if (this->isSet(*funcAnnoCmdOp))
+    if (this->isSet(*funcAnnoRef))
     {
         argHash["funcAnno"] = nullptr;
-        if (!this->isSet(*snp_pos) || this->value(*snp_pos).isNull())
+        if(strucanno_flag==0)
         {
-            throw invalid_argument("Invalid argument --snp_pos");
+           throw invalid_argument("please do structuralAnno before funcAnno ");
         }
-        else
+        if(step_flag==0)//如果没有做step，则要检查是否有snppos命令
         {
-            argHash["snpPosFilePath"] = this->value(*snp_pos);
+            if (!this->isSet(*snp_pos) || this->value(*snp_pos).isNull())
+            {
+                throw invalid_argument("Invalid argument --snppos");
+            }
+            else
+            {
+                argHash["snpPosFilePath"] = this->value(*snp_pos);
+            }
         }
+
         if (!this->isSet(*funcAnnoRef) || this->value(*funcAnnoRef).isNull())
         {
-            throw invalid_argument("Invalid argument --funcAnnoRef");
+            throw invalid_argument("Invalid argument --funcanno");
         }
         else
         {
             argHash["funcAnnoRefFilePath"] = this->value(*funcAnnoRef);
         }
+        /*
         if (!this->isSet(*exvar) || this->value(*exvar).isNull())
         {
             throw invalid_argument("Invalid argument --exvar");
@@ -772,6 +779,7 @@ QHash<QString, QString> CommandLineParser::getArgsFromCmd()
         else
         {
             argHash["exVarFuncFilePath"] = this->value(*exvar);
+
         }
         if (!this->isSet(*var) || this->value(*var).isNull())
         {
@@ -781,22 +789,9 @@ QHash<QString, QString> CommandLineParser::getArgsFromCmd()
         {
             argHash["varFuncFilePath"] = this->value(*var);
         }
-        if (!this->isSet(*outCmdOp) || this->value(*outCmdOp).isNull())
-        {
-            throw invalid_argument("Invalid argument -- out");
-        }
-        else
-        {
-            argHash["out"] = this->value(*outCmdOp);
-        }
-        if (!this->isSet(*ProjectNameCmdOp) || this->value(*ProjectNameCmdOp).isNull())
-        {
-            throw invalid_argument("Invalid argument --name");
-        }
-        else
-        {
-            argHash["ProjectName"] = this->value(*ProjectNameCmdOp);
-        }
+        */
+
+
     }
 
     return argHash;
@@ -2399,7 +2394,7 @@ bool CommandLineParser::callGemmaGwas(QHash<QString, QString> args)
     }
 
 
-    if (kinship.isNull()  && model == "LMM" && isMakeRelatedMatAuto)//如果用户没有输入亲缘矩阵文件，同时要求生成亲缘矩阵，则就开始制作矩阵（实际上两个条件有一个就行了，比较鸡肋）
+    if (kinship.isNull()  && model == "LMM" && isMakeRelatedMatAuto)//如果用户没有输入亲缘矩阵文件，同时要求生成亲缘矩阵，则就开始制作矩阵
     {    qDebug()<< "kinship_type: " << kinship_type ;
          if (!gemma.makeKinship(binaryFile, genoFileBaseName+"_tmp", kinship_type))//这里生成亲缘矩阵（其实是填充生成亲缘矩阵命令参数列表，使后面直接调用gemma生成矩阵）
          {                                                              //需要注意这里生成的矩阵它的名字带有后缀_tmp但它的位置不一定和所用的二进制文件在一起,而是在当前终端的路径下

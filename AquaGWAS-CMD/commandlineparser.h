@@ -95,10 +95,9 @@ private:
     QCommandLineOption *emmax_makeKinCmdOp;
     QCommandLineOption *emmax_kinMatCmdOp;
     //Man/QQ plot parameters
-    QCommandLineOption *gwBase ;
-    QCommandLineOption *gwExpo ;
-    QCommandLineOption *sgBase ;
-    QCommandLineOption *sgExpo ;
+    QCommandLineOption *gw ;
+    QCommandLineOption *sg ;
+
     //correct p value
     QCommandLineOption *correction;
     // gcta detail parameters
@@ -119,8 +118,7 @@ private:
    QCommandLineOption *funcAnnoCmdOp;
    QCommandLineOption *stepAnnoCmdOp;
    QCommandLineOption *pvalFileCmdOp;
-   QCommandLineOption *thBase ;
-   QCommandLineOption *thExpo ;
+   QCommandLineOption *threshold ;
    QCommandLineOption *snp_pos ;
    QCommandLineOption *funcAnnoRef;
    QCommandLineOption *var;
