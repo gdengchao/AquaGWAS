@@ -1,5 +1,5 @@
 # AquaGWAS
-## [Download AquaGWAS](https://github.com/gdengchao/AquaGWAS/releases/download/V1.0/AquaGWAS-V1.0.zip)
+## [Download AquaGWAS](https://github.com/gdengchao/AquaGWAS/releases/download/V1.0/AquaGWAS_V1.0.zip)
 ## [Download test data](https://github.com/gdengchao/AquaGWAS/releases/download/V1.0/test_data.zip)
 
 ## Usage for GUI
