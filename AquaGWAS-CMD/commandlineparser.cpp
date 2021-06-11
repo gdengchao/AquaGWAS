@@ -1468,7 +1468,7 @@ void CommandLineParser::runPopLDdecaySingle(QHash<QString, QString> args)
             {
                 map = genoFileAbPath+"/"+genoFileBaseName+".map";
             }
-            plink.filterData(genotype, map, maf, mind, geno, plinkFile);
+            plink.filterPlinkFile(genotype, map, maf, mind, geno, plinkFile);
             filterDataFlag = true;
         }
 
@@ -1757,7 +1757,7 @@ void CommandLineParser::runPopLDdecaybyFamily(QHash<QString, QString> args)
         {
             map = genoFileAbPath+"/"+genoFileBaseName+".map";
         }
-        plink.filterData(genotype, map, maf, mind, geno, plinkFile);
+        plink.filterPlinkFile(genotype, map, maf, mind, geno, plinkFile);
         filterDataFlag = true;
     }
 

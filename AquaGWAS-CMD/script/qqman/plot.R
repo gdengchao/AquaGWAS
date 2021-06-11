@@ -36,7 +36,12 @@ drawManhattan <- function(args)
         source(debug)
     }
 
-	manhattan(newData, output = out, suggestiveline = suggest, genomewideline = genomewide, col = unique(newData$CHR)+1)
+    # when the first chr is 0, data of chr_0 will not be plot, without +1 of vector col;
+    color = unique(newData$CHR)
+    # Avoid the data of chr_0 can't be plotted.
+    color = color + 1
+	
+    manhattan(newData, output = out, suggestiveline = suggest, genomewideline = genomewide, col = color)   
     write(out)
 }
 

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE QtCreatorProject>
-<!-- Written by QtCreator 4.11.0, 2021-01-22T20:10:27. -->
+<!-- Written by QtCreator 4.11.0, 2021-06-11T21:37:15. -->
 <qtcreator>
  <data>
   <variable>EnvironmentId</variable>
@@ -285,9 +285,10 @@
     </valuelist>
     <value type="int" key="PE.EnvironmentAspect.Base">2</value>
     <valuelist type="QVariantList" key="PE.EnvironmentAspect.Changes"/>
-    <value type="QString" key="ProjectExplorer.ProjectConfiguration.Id">Qt4ProjectManager.Qt4RunConfiguration:/home/zhi/Desktop/AquaGWAS/AquaGWAS/AquaGWAS-GUI/AquaGWAS-GUI.pro</value>
-    <value type="QString" key="ProjectExplorer.RunConfiguration.BuildKey">/home/zhi/Desktop/AquaGWAS/AquaGWAS/AquaGWAS-GUI/AquaGWAS-GUI.pro</value>
-    <value type="QString" key="RunConfiguration.Arguments">-A -T gemma -M LMM --name pro2 -p /home/zhi/Desktop/test_data/test_data/PHE1.phe --kinmatrix_gemma 1 -g /home/zhi/Desktop/test_data/test_data/test_222.ped -o /home/zhi/Desktop/out --makekin_gemma yes --correction no --lmmtest 1 --maf 0.05 --mind 0.20 --geno 0.05 --gwBase 5 --gwExpo -8 --sgBase 1 --sgExpo -5</value>
+    <value type="QString" key="ProjectExplorer.ProjectConfiguration.DisplayName">AquaGWAS-GUI2</value>
+    <value type="QString" key="ProjectExplorer.ProjectConfiguration.Id">Qt4ProjectManager.Qt4RunConfiguration:/home/zhi/Desktop/GWAS/AquaGWAS/AquaGWAS-GUI/AquaGWAS-GUI.pro</value>
+    <value type="QString" key="ProjectExplorer.RunConfiguration.BuildKey">/home/zhi/Desktop/GWAS/AquaGWAS/AquaGWAS-GUI/AquaGWAS-GUI.pro</value>
+    <value type="QString" key="RunConfiguration.Arguments"></value>
     <value type="bool" key="RunConfiguration.Arguments.multi">false</value>
     <value type="QString" key="RunConfiguration.OverrideDebuggerStartup"></value>
     <value type="bool" key="RunConfiguration.UseCppDebugger">false</value>
