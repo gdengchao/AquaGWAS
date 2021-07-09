@@ -65,7 +65,7 @@
      <enum>QTabWidget::Rounded</enum>
     </property>
     <property name="currentIndex">
-     <number>0</number>
+     <number>3</number>
     </property>
     <property name="iconSize">
      <size>
@@ -890,35 +890,6 @@ pressed { background-color: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,stop: 0 #
        <string>Association analysis</string>
       </property>
      </widget>
-     <widget class="QPushButton" name="assoc_cmdButton">
-      <property name="geometry">
-       <rect>
-        <x>430</x>
-        <y>460</y>
-        <width>141</width>
-        <height>41</height>
-       </rect>
-      </property>
-      <property name="font">
-       <font>
-        <family>DejaVu Sans</family>
-        <pointsize>11</pointsize>
-       </font>
-      </property>
-      <property name="cursor">
-       <cursorShape>PointingHandCursor</cursorShape>
-      </property>
-      <property name="acceptDrops">
-       <bool>true</bool>
-      </property>
-      <property name="styleSheet">
-       <string notr="true">color: rgb(238, 238, 236);
-background-color: rgb(0, 0, 0);</string>
-      </property>
-      <property name="text">
-       <string>CMDGenerate</string>
-      </property>
-     </widget>
      <widget class="QFrame" name="frame_7">
       <property name="geometry">
        <rect>
@@ -1668,39 +1639,10 @@ pressed { background-color: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,stop: 0 #
        <string>Run</string>
       </property>
      </widget>
-     <widget class="QPushButton" name="pca_ld_cmdButton">
-      <property name="geometry">
-       <rect>
-        <x>440</x>
-        <y>450</y>
-        <width>141</width>
-        <height>41</height>
-       </rect>
-      </property>
-      <property name="font">
-       <font>
-        <family>DejaVu Sans</family>
-        <pointsize>11</pointsize>
-       </font>
-      </property>
-      <property name="cursor">
-       <cursorShape>PointingHandCursor</cursorShape>
-      </property>
-      <property name="acceptDrops">
-       <bool>true</bool>
-      </property>
-      <property name="styleSheet">
-       <string notr="true">color: rgb(238, 238, 236);
-background-color: rgb(0, 0, 0);</string>
-      </property>
-      <property name="text">
-       <string>CMDGenerate</string>
-      </property>
-     </widget>
      <widget class="QFrame" name="frame_6">
       <property name="geometry">
        <rect>
-        <x>30</x>
+        <x>40</x>
         <y>50</y>
         <width>461</width>
         <height>91</height>
@@ -1717,7 +1659,7 @@ background-color: rgb(0, 0, 0);</string>
         <rect>
          <x>10</x>
          <y>10</y>
-         <width>449</width>
+         <width>441</width>
          <height>31</height>
         </rect>
        </property>
@@ -1831,7 +1773,7 @@ border-radius:5px;//这个是改变成圆角边框;
         <rect>
          <x>10</x>
          <y>50</y>
-         <width>431</width>
+         <width>441</width>
          <height>31</height>
         </rect>
        </property>
@@ -1947,7 +1889,6 @@ border-radius:5px;//这个是改变成圆角边框;
      <zorder>label_26</zorder>
      <zorder>pcaRunPushButton</zorder>
      <zorder>ldRunPushButton</zorder>
-     <zorder>pca_ld_cmdButton</zorder>
      <zorder>frame_6</zorder>
     </widget>
     <widget class="QWidget" name="tab">
@@ -2789,41 +2730,11 @@ pressed { background-color: qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1,stop: 0 #
        <string>RUN</string>
       </property>
      </widget>
-     <widget class="QPushButton" name="annotation_cmdButton">
-      <property name="geometry">
-       <rect>
-        <x>440</x>
-        <y>450</y>
-        <width>141</width>
-        <height>41</height>
-       </rect>
-      </property>
-      <property name="font">
-       <font>
-        <family>DejaVu Sans</family>
-        <pointsize>11</pointsize>
-       </font>
-      </property>
-      <property name="cursor">
-       <cursorShape>PointingHandCursor</cursorShape>
-      </property>
-      <property name="acceptDrops">
-       <bool>true</bool>
-      </property>
-      <property name="styleSheet">
-       <string notr="true">color: rgb(238, 238, 236);
-background-color: rgb(0, 0, 0);</string>
-      </property>
-      <property name="text">
-       <string>CMDGenerate</string>
-      </property>
-     </widget>
      <zorder>frame_2</zorder>
      <zorder>frame_3</zorder>
      <zorder>frame</zorder>
      <zorder>label_35</zorder>
      <zorder>annotationRunButton</zorder>
-     <zorder>annotation_cmdButton</zorder>
     </widget>
    </widget>
    <widget class="QFrame" name="frame_10">
@@ -2856,7 +2767,7 @@ background-color: rgb(0, 0, 0);</string>
        <x>0</x>
        <y>0</y>
        <width>151</width>
-       <height>550</height>
+       <height>521</height>
       </rect>
      </property>
      <layout class="QGridLayout" name="gridLayout_3">
@@ -3230,7 +3141,7 @@ background-color: rgb(0, 0, 0);</string>
      <x>0</x>
      <y>0</y>
      <width>805</width>
-     <height>26</height>
+     <height>18</height>
     </rect>
    </property>
   </widget>

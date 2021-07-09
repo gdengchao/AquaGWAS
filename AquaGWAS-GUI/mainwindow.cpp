@@ -64,11 +64,11 @@ MainWindow::MainWindow(QWidget *parent)
 
     connect(runningMsgWidget, SIGNAL(closeSignal()), this, SLOT(on_closeRunningWidget()));
     //generate cmd line
-    connect(this->ui->pca_ld_cmdButton,SIGNAL(clicked()),this,SLOT(pca_ld_cmdButton_clicked()));
+    //connect(this->ui->pca_ld_cmdButton,SIGNAL(clicked()),this,SLOT(pca_ld_cmdButton_clicked()));
 
-    connect(this->ui->annotation_cmdButton,SIGNAL(clicked()),this,SLOT(annotationCmdButton_clicked()));
+    //connect(this->ui->annotation_cmdButton,SIGNAL(clicked()),this,SLOT(annotationCmdButton_clicked()));
 
-    connect(this->ui->assoc_cmdButton,SIGNAL(clicked()),this,SLOT(cmdGWASButton_clicked()));
+    //connect(this->ui->assoc_cmdButton,SIGNAL(clicked()),this,SLOT(cmdGWASButton_clicked()));
     // Multi thread to modify ui.
     connect(this, SIGNAL(runningMsgWidgetAppendText(QString)),
             this->runningMsgWidget, SLOT(on_appendText(QString)));
