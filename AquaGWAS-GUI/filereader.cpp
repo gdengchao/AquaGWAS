@@ -108,6 +108,10 @@ bool FileReader::transformCovariateFile(QString srcCovar, QString desCovar)
     QTextStream srcCovarFileStream(&srcCovarFile);
     QTextStream desCovarFileStream(&desCovarFile);
 
+    if (QFile::exists(desCovar))
+    {
+        QFile::remove(desCovar);
+    }
     if (!srcCovarFile.open(QIODevice::ReadOnly) ||
             !desCovarFile.open(QIODevice::ReadWrite))
     {   // Open file error.
@@ -156,15 +160,35 @@ bool FileReader::makeAvinputAndSnpposFile(QString vcfFilePath, QString pvalFileP
     }
     QTextStream pvalFileStream(&pvalFile);
     QMap<QString, QString> snpIDMap;    // SNPs need to extract.
+    int lineNum = 0;
     while (!pvalFileStream.atEnd())
     {
-        QStringList curLine = pvalFileStream.readLine().split(QRegExp("\\s+"), QString::SkipEmptyParts);
-        snpIDMap.insert(curLine[0], curLine[0]+"\t"+curLine[1]);   // cut the SNP_ID and p-value
+        ++lineNum;
+        QString curLine = pvalFileStream.readLine();
+        QStringList curLineList = curLine.split(QRegExp("\\s+"), QString::SkipEmptyParts);
+        if (curLineList.size() < 2)
+        {
+            qDebug() << pvalFile << ":" << lineNum << ": " << curLine << endl;
+            continue;
+        }
+        snpIDMap.insert(curLineList[0], curLineList[0]+"\t"+curLineList[1]);   // cut the SNP_ID and p-value
     }
 
     QFile vcfFile(vcfFilePath);
     QFile avinputFile(avinputFilePath);
     QFile snpPosFile(snpPosFilePath);
+
+
+    if (QFile::exists(avinputFilePath))
+    {
+        QFile::remove(avinputFilePath);
+    }
+
+    if (QFile::exists(snpPosFilePath))
+    {
+        QFile::remove(snpPosFilePath);
+    }
+
     if (!vcfFile.open(QIODevice::ReadOnly) ||
             !avinputFile.open(QIODevice::WriteOnly) ||
             !snpPosFile.open(QIODevice::WriteOnly))
@@ -176,14 +200,23 @@ bool FileReader::makeAvinputAndSnpposFile(QString vcfFilePath, QString pvalFileP
     QTextStream vcfFileStream(&vcfFile);
     QTextStream avinputFileStream(&avinputFile);
     QTextStream snpPosFileStream(&snpPosFile);
+
+    qDebug() << "Begin make SNPpos" << endl;
     while (!vcfFileStream.atEnd())
     {
         QString curLine = vcfFileStream.readLine();
-        if (curLine[0] == '#')
+        if (curLine.isNull() || curLine.isEmpty() || curLine[0] == '#')
         {
             continue;
         }
         QStringList curLineList = curLine.split(QRegExp("\\s+"), QString::SkipEmptyParts);
+
+        if (curLineList.size() < 4)
+        {
+            qDebug () << __FILE__ << " " << __LINE__ << "curLineList.size() < 4" << endl;
+            qDebug() << "curLine: " << curLine << endl;
+            return false;
+        }
 
         QString snpID = curLineList[2];
         if (snpID == '.')
@@ -200,6 +233,8 @@ bool FileReader::makeAvinputAndSnpposFile(QString vcfFilePath, QString pvalFileP
                                                                                                     << curLineList[3] << "\t" << curLineList[4] << endl;
         }
     }
+
+    qDebug() << "Make SNPpos OK" << endl;
 
     return true;
 }
@@ -241,6 +276,11 @@ bool FileReader::completeTfamFromPheno(QString phenoFilePath, QString tfamFilePa
 
     QString tmpTfamFilePath = tfamFilePath+".tmp";
     QFile tmpTfamFile(tmpTfamFilePath);
+
+    if (QFile::exists(tmpTfamFilePath))
+    {
+        QFile::remove(tmpTfamFilePath);
+    }
     if (!tmpTfamFile.open(QIODevice::WriteOnly))
     {
         return false;
@@ -303,6 +343,10 @@ bool FileReader::completePedFromPheno(QString phenoFilePath, QString pedFilePath
 
     QString tmpPedFilePath = pedFilePath+".tmp";
     QFile tmpPedFile(tmpPedFilePath);
+    if (QFile::exists(tmpPedFilePath))
+    {
+        QFile::remove(tmpPedFilePath);
+    }
     if (!tmpPedFile.open(QIODevice::WriteOnly))
     {
         return false;
@@ -369,6 +413,10 @@ bool FileReader::completeFIDofTfam(QString fidFilePath, QString tfamFilePath)
 
     QString tmpTfamFilePath = tfamFilePath+".tmp";
     QFile tmpTfamFile(tmpTfamFilePath);
+    if (QFile::exists(tmpTfamFilePath))
+    {
+        QFile::remove(tmpTfamFilePath);
+    }
     if (!tmpTfamFile.open(QIODevice::WriteOnly))
     {
         return false;
@@ -450,6 +498,10 @@ bool FileReader::completeFIDofPed(QString fidFilePath, QString pedFilePath)
 
     QString tmpPedFilePath = pedFilePath+".tmp";
     QFile tmpPedFile(tmpPedFilePath);
+    if (QFile::exists(tmpPedFilePath))
+    {
+        QFile::remove(tmpPedFilePath);
+    }
     if (!tmpPedFile.open(QIODevice::WriteOnly))
     {
         return false;
@@ -530,6 +582,10 @@ bool FileReader::filterSNPByChr(QString filePath, QString chrListFilePath, QStri
     //    bool a  = chrListFile.open(QIODevice::ReadOnly);
     //    bool b = mapFile.open(QIODevice::ReadOnly);
     //    bool c = snpListFile.open(QIODevice::WriteOnly);
+    if (QFile::exists(snpListFilePath))
+    {
+        QFile::remove(snpListFilePath);
+    }
     if (!chrListFile.open(QIODevice::ReadOnly) ||
             !file.open(QIODevice::ReadOnly) ||
             !snpListFile.open(QIODevice::ReadWrite))
@@ -601,6 +657,10 @@ bool FileReader::modifyChr(QString filePath)
     QString tmpFilePath = filePath+".tmp";
     QFile file(filePath);
     QFile tmpFile(tmpFilePath);
+    if (QFile::exists(tmpFilePath))
+    {
+        QFile::remove(tmpFilePath);
+    }
     if (!file.open(QIODevice::ReadOnly) || !tmpFile.open(QIODevice::WriteOnly))
     {
         return false;
@@ -649,6 +709,10 @@ bool FileReader::modifyChr(QString srcFilePath, QString dstFilePath)
 
     QFile srcFile(srcFilePath);
     QFile dstFile(dstFilePath);
+    if (QFile::exists(dstFilePath))
+    {
+        QFile::remove(dstFilePath);
+    }
     if (!srcFile.open(QIODevice::ReadOnly) || !dstFile.open(QIODevice::WriteOnly))
     {
         return false;
@@ -701,6 +765,10 @@ bool FileReader::completeSnpID(QString filePath)
     QFile file(filePath);
     QFile tmpFile(tmpFilePath);
 
+    if (QFile::exists(tmpFilePath))
+    {
+        QFile::remove(tmpFilePath);
+    }
     if (!file.open(QIODevice::ReadOnly) || !tmpFile.open(QIODevice::WriteOnly))
     {
         return false;

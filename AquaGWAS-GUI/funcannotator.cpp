@@ -60,31 +60,61 @@ bool FuncAnnotator::filterSNP(QString const pvalFilePath, QString const thBase,
     int thresholdExpo = thExpo.toInt();
     float threshold = -log10f(thresholdBase*pow10f(thresholdExpo));
 
+    qDebug() << "threshold: " << threshold << endl;
+
     QFile pvalFile(pvalFilePath);
     QFile outFile(outFilePath);
 
+    if (QFile::exists(outFilePath))
+    {
+        QFile::remove(outFilePath);
+    }
+
     if (!pvalFile.open(QIODevice::ReadOnly) ||
-        !outFile.open(QIODevice::ReadWrite))
+        !outFile.open(QIODevice::WriteOnly))
     {
         return false;
     }
     QTextStream pvalFileStream(&pvalFile);
     QTextStream outFileStream(&outFile);
 
+
+    int outLineNum = 0;
     pvalFileStream.readLine();  // Discard the header in the first line.
     while (!pvalFileStream.atEnd())
     {
         QString curLine = pvalFileStream.readLine();
         QStringList curLineList = curLine.replace("NA", "-9").split(QRegExp("\\s+"), QString::SkipEmptyParts);
-        if (-log10f(curLineList.constLast().toFloat()) >= threshold)
+        if (curLineList.empty())
         {
+            continue;
+        }
+        float pval =  curLineList.constLast().toFloat();
+        if (-log10f(pval) >= threshold)
+        {
+            qDebug() << outLineNum <<  " - pval: " << pval << endl;
+            // qDebug() << "snpIDIndex: " << snpIDIndex << endl;
+            if (curLineList.length() <= snpIDIndex)
+            {
+                qDebug() << "curLineList len: " << curLineList.length() << endl;
+                qDebug() << "Error" << endl;
+                continue;
+            }
             outFileStream << curLineList[snpIDIndex] << "\t"
                           << curLineList.constLast() << endl;
+            ++outLineNum;
+            if (outLineNum == 56)
+            {
+                qDebug() << "snpIDIndex: " << snpIDIndex << endl;
+                qDebug() << "curLineList: " << curLineList << endl;
+            }
         }
     }
     pvalFile.close();
     outFile.close();
 
+    qDebug() << "Sig SNP num: " << outLineNum << endl;
+    qDebug() << "Filter SNP OK" << endl;
     return true;
 }
 
@@ -119,6 +149,13 @@ bool FuncAnnotator::extractPos(QString const pvalFilePath, QString const mapFile
 
     QFile mapFile(mapFilePath);
     QFile outFile(outFilePath);
+
+
+    if (QFile::exists(outFilePath))
+    {
+        QFile::remove(outFilePath);
+    }
+
     if (!mapFile.open(QIODevice::ReadOnly) ||
         !outFile.open(QIODevice::WriteOnly))
     {
@@ -182,6 +219,12 @@ bool FuncAnnotator::complExoSnpInfo(QString const snpPosFilePath, QString const 
     /////////////////////////////////////////////////////
     QFile exValFuncFile(exVarFuncFilePath);
     QFile outFile(outFilePath);
+
+
+    if (QFile::exists(outFilePath))
+    {
+        QFile::remove(outFilePath);
+    }
     if (!exValFuncFile.open(QIODevice::ReadOnly) ||
         !outFile.open(QIODevice::WriteOnly))
     {
@@ -318,6 +361,12 @@ bool FuncAnnotator::complNonExoSnpInfo(QString const exonicPosFilePath, QString 
     /////////////////////////////////////////////////////
     QFile varFuncFile(varFuncFilePath);
     QFile outFile(outFilePath);
+
+
+    if (QFile::exists(outFilePath))
+    {
+        QFile::remove(outFilePath);
+    }
     if (!varFuncFile.open(QIODevice::ReadOnly) ||
         !outFile.open(QIODevice::WriteOnly))
     {
@@ -446,6 +495,12 @@ bool FuncAnnotator::complFuncAnnoInfo(QString const exonicPosFilePath, QString n
     QMap<QString, QString> geneIDMap;       // Save both exonicPos and nonExonicPos.
     QFile baseFile(baseFilePath);
     QFile outFile(outFilePath);
+
+
+    if (QFile::exists(outFilePath))
+    {
+        QFile::remove(outFilePath);
+    }
     if  (!baseFile.open(QIODevice::ReadOnly) ||
          !outFile.open(QIODevice::WriteOnly))
     {
@@ -594,6 +649,11 @@ bool FuncAnnotator::complFuncAnnoInfo(QString const exonicPosFilePath, QString n
 
     QFile baseFile(baseFilePath);
     QFile outFile(outFilePath);
+
+    if (QFile::exists(outFilePath))
+    {
+        QFile::remove(outFilePath);
+    }
     if  (!baseFile.open(QIODevice::ReadOnly) ||
          !outFile.open(QIODevice::WriteOnly))
     {
@@ -686,6 +746,11 @@ bool FuncAnnotator::makeBaseFromEnsembl(QString gtfOrGffFilePath, QString ensemb
     QFile gtfOrGffFile(gtfOrGffFilePath);
     QFile ensemblBaseFile(ensemblBase);
     QFile outFile(outFilePath);
+
+    if (QFile::exists(outFilePath))
+    {
+        QFile::remove(outFilePath);
+    }
     if (!gtfOrGffFile.open(QIODevice::ReadOnly) ||
         !ensemblBaseFile.open(QIODevice::ReadOnly) ||
         !outFile.open(QIODevice::WriteOnly))
@@ -751,6 +816,12 @@ bool FuncAnnotator::makeBaseFromNcbi(QString gtfOrGffFilePath, QString ncbiBase,
     QFile gtfOrGffFile(gtfOrGffFilePath);
     QFile ncbiBaseFile(ncbiBase);
     QFile outFile(outFilePath);
+
+
+    if (QFile::exists(outFilePath))
+    {
+        QFile::remove(outFilePath);
+    }
     if (!gtfOrGffFile.open(QIODevice::ReadOnly) ||
         !ncbiBaseFile.open(QIODevice::ReadOnly) ||
         !outFile.open(QIODevice::WriteOnly))

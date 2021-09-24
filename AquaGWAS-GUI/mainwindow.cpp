@@ -52,7 +52,7 @@ MainWindow::MainWindow(QWidget *parent)
 #ifdef QT_NO_DEBUG
     workDirectory->setOutputDirectory(QDir::currentPath()+"/output/");
 #else
-    workDirectory->setOutputDirectory("/home/yingwang/Desktop/out/");
+    workDirectory->setOutputDirectory("/mnt/my_share/dchao/kmer2Snp/");
 #endif
     ui->projectNameLineEdit->setText(workDirectory->getProjectName());
     ui->outdirLineEdit->setText(workDirectory->getOutputDirectory()+"/"+workDirectory->getProjectName());
